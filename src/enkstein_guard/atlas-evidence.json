@@ -1,0 +1,419 @@
+{
+  "schema_version": 2,
+  "source": "https://github.com/mitre-atlas/atlas-data",
+  "commit": "3259f388d19cbcca11bacf12a0ef97f4198f711b",
+  "path": "dist/v6/ATLAS-2026.09.yaml",
+  "sha256": "935efa93e28294432d3e2f537eb94991ef8d1f8c58341cd360ea3321ddb66688",
+  "content_version": "2026.09",
+  "techniques": [
+    {
+      "id": "AML.T0051",
+      "name": "LLM Prompt Injection",
+      "status": "scenario_and_component_evidence",
+      "controls": [
+        "C-AUTH",
+        "C-TASK"
+      ],
+      "tests": [
+        "test_orchestration.OrchestrationTests.test_memory_is_untrusted_and_cannot_grant_authority"
+      ],
+      "component_test_results": {
+        "test_orchestration.OrchestrationTests.test_memory_is_untrusted_and_cannot_grant_authority": "passed"
+      },
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_direct_injection_cannot_grant_tool_authority",
+          "outcome": "prevented_in_scenario"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_indirect_memory_injection_cannot_grant_authority",
+          "outcome": "prevented_in_scenario"
+        }
+      ],
+      "note": "",
+      "limitation": "Selected local scenarios and component tests only; no full technique prevention claim."
+    },
+    {
+      "id": "AML.T0053",
+      "name": "AI Agent Tool Invocation",
+      "status": "scenario_evidence",
+      "controls": [
+        "C-AUTH"
+      ],
+      "tests": [],
+      "component_test_results": {},
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_delegated_privilege_escalation_and_unknown_tool_denied",
+          "outcome": "prevented_in_scenario"
+        }
+      ],
+      "note": "",
+      "limitation": "Selected local scenarios and component tests only; no full technique prevention claim."
+    },
+    {
+      "id": "AML.T0055",
+      "name": "Unsecured Credentials",
+      "status": "scenario_and_component_evidence",
+      "controls": [
+        "C-VAULT"
+      ],
+      "tests": [
+        "test_broker.BrokerTests.test_scoped_delivery_and_revocation",
+        "test_private_ai.PrivateTests.test_secrets_and_pii_never_reach_model_engines_or_audit"
+      ],
+      "component_test_results": {
+        "test_broker.BrokerTests.test_scoped_delivery_and_revocation": "passed",
+        "test_private_ai.PrivateTests.test_secrets_and_pii_never_reach_model_engines_or_audit": "passed"
+      },
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_nested_pii_and_secret_values_absent_from_model_and_inspectors",
+          "outcome": "prevented_in_scenario"
+        }
+      ],
+      "note": "",
+      "limitation": "Selected local scenarios and component tests only; no full technique prevention claim."
+    },
+    {
+      "id": "AML.T0056",
+      "name": "Extract LLM System Prompt",
+      "status": "scenario_and_component_evidence",
+      "controls": [
+        "C-DECL"
+      ],
+      "tests": [
+        "test_sensitivity.DeclaredContextTests.test_verbatim_and_obfuscated_canary"
+      ],
+      "component_test_results": {
+        "test_sensitivity.DeclaredContextTests.test_verbatim_and_obfuscated_canary": "passed"
+      },
+      "scenarios": [
+        {
+          "id": "test_product_scenarios.LibraryScenarios.test_private_model_output_with_declared_context_denied",
+          "outcome": "prevented_in_scenario"
+        },
+        {
+          "id": "test_product_scenarios.ProductScenarios.test_declared_hidden_context_in_output_withheld",
+          "outcome": "prevented_in_scenario"
+        }
+      ],
+      "note": "",
+      "limitation": "Selected local scenarios and component tests only; no full technique prevention claim."
+    },
+    {
+      "id": "AML.T0057",
+      "name": "LLM Data Leakage",
+      "status": "scenario_and_component_evidence",
+      "controls": [
+        "C-SENS",
+        "C-RETR",
+        "C-DOMAIN"
+      ],
+      "tests": [
+        "test_retrieval.RetrievalTests.test_search_returns_only_authorized_documents_ranked_after_filtering",
+        "test_product_config.ProductConfigTests.test_declared_data_domain_joins_aliases_for_the_round_trip_rule"
+      ],
+      "component_test_results": {
+        "test_retrieval.RetrievalTests.test_search_returns_only_authorized_documents_ranked_after_filtering": "passed",
+        "test_product_config.ProductConfigTests.test_declared_data_domain_joins_aliases_for_the_round_trip_rule": "passed"
+      },
+      "scenarios": [
+        {
+          "id": "test_product_scenarios.LibraryScenarios.test_declared_alias_cannot_read_back_data_below_its_label",
+          "outcome": "prevented_in_scenario"
+        },
+        {
+          "id": "test_product_scenarios.ProductScenarios.test_card_number_smuggled_as_json_number_denied_to_external_route",
+          "outcome": "prevented_in_scenario"
+        },
+        {
+          "id": "test_product_scenarios.ProductScenarios.test_retrieval_ignores_agent_supplied_acl_and_identity",
+          "outcome": "prevented_in_scenario"
+        },
+        {
+          "id": "test_product_scenarios.ProductScenarios.test_supported_retrieval_denies_cross_tenant_and_unauthorized_documents",
+          "outcome": "prevented_in_scenario"
+        },
+        {
+          "id": "test_product_scenarios.ProductScenarios.test_tainted_agent_summary_to_external_destination_denied",
+          "outcome": "prevented_in_scenario"
+        },
+        {
+          "id": "test_workflow_recovery_scenarios.WorkflowRecoveryScenarios.test_sensitive_handoff_remains_blocked_after_recovery",
+          "outcome": "prevented_in_scenario"
+        }
+      ],
+      "note": "",
+      "limitation": "Selected local scenarios and component tests only; no full technique prevention claim."
+    },
+    {
+      "id": "AML.T0071",
+      "name": "False RAG Entry Injection",
+      "status": "component_evidence",
+      "controls": [
+        "C-RETR"
+      ],
+      "tests": [
+        "test_retrieval.RetrievalTests.test_forged_backend_metadata_and_substituted_content_ignored"
+      ],
+      "component_test_results": {
+        "test_retrieval.RetrievalTests.test_forged_backend_metadata_and_substituted_content_ignored": "passed"
+      },
+      "scenarios": [],
+      "note": "",
+      "limitation": "Selected local scenarios and component tests only; no full technique prevention claim."
+    },
+    {
+      "id": "AML.T0080",
+      "name": "AI Agent Context Poisoning",
+      "status": "scenario_and_component_evidence",
+      "controls": [
+        "C-LABEL"
+      ],
+      "tests": [
+        "test_orchestration.OrchestrationTests.test_memory_is_untrusted_and_cannot_grant_authority"
+      ],
+      "component_test_results": {
+        "test_orchestration.OrchestrationTests.test_memory_is_untrusted_and_cannot_grant_authority": "passed"
+      },
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_indirect_memory_injection_cannot_grant_authority",
+          "outcome": "prevented_in_scenario"
+        }
+      ],
+      "note": "",
+      "limitation": "Selected local scenarios and component tests only; no full technique prevention claim."
+    },
+    {
+      "id": "AML.T0086",
+      "name": "Exfiltration via AI Agent Tool Invocation",
+      "status": "scenario_and_component_evidence",
+      "controls": [
+        "C-SENS",
+        "C-LABEL",
+        "C-PROVIDER"
+      ],
+      "tests": [
+        "test_orchestration.OrchestrationTests.test_cross_agent_summary_exfiltration_denied",
+        "test_providers.ProviderTests.test_provider_side_fetch_hosted_tools_and_storage_refused_before_dispatch"
+      ],
+      "component_test_results": {
+        "test_orchestration.OrchestrationTests.test_cross_agent_summary_exfiltration_denied": "passed",
+        "test_providers.ProviderTests.test_provider_side_fetch_hosted_tools_and_storage_refused_before_dispatch": "passed"
+      },
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_cross_agent_summary_does_not_remove_confidential_label",
+          "outcome": "prevented_in_scenario"
+        },
+        {
+          "id": "test_product_scenarios.LibraryScenarios.test_delegated_child_cannot_send_declared_context_externally",
+          "outcome": "prevented_in_scenario"
+        },
+        {
+          "id": "test_product_scenarios.LibraryScenarios.test_provider_side_url_fetch_and_hosted_tools_refused_before_dispatch",
+          "outcome": "prevented_in_scenario"
+        },
+        {
+          "id": "test_product_scenarios.ProductScenarios.test_tainted_agent_summary_to_external_destination_denied",
+          "outcome": "prevented_in_scenario"
+        }
+      ],
+      "note": "",
+      "limitation": "Selected local scenarios and component tests only; no full technique prevention claim."
+    },
+    {
+      "id": "AML.T0010.005",
+      "name": "AI Agent Tool",
+      "status": "scenario_and_component_evidence",
+      "controls": [
+        "C-ADMIT"
+      ],
+      "tests": [
+        "test_orchestration.OrchestrationTests.test_admission_detects_changed_component",
+        "test_admission.CapabilityScanTests.test_admission_denies_undeclared_capability"
+      ],
+      "component_test_results": {
+        "test_orchestration.OrchestrationTests.test_admission_detects_changed_component": "passed",
+        "test_admission.CapabilityScanTests.test_admission_denies_undeclared_capability": "passed"
+      },
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_component_replacement_during_inspection_denied",
+          "outcome": "prevented_in_scenario"
+        },
+        {
+          "id": "test_product_scenarios.LibraryScenarios.test_component_with_undeclared_network_capability_rejected",
+          "outcome": "prevented_in_scenario"
+        }
+      ],
+      "note": "",
+      "limitation": "Selected local scenarios and component tests only; no full technique prevention claim."
+    },
+    {
+      "id": "AML.T0034.002",
+      "name": "Agentic Resource Consumption",
+      "status": "scenario_and_component_evidence",
+      "controls": [
+        "C-BUDGET"
+      ],
+      "tests": [
+        "test_orchestration.OrchestrationTests.test_shared_call_budget_cannot_be_reset_by_child",
+        "test_orchestration.OrchestrationTests.test_agent_count_and_depth_are_bounded",
+        "test_durable_workflows.DurableWorkflowTests.test_restart_preserves_budget_exhaustion_and_wall_deadline"
+      ],
+      "component_test_results": {
+        "test_orchestration.OrchestrationTests.test_shared_call_budget_cannot_be_reset_by_child": "passed",
+        "test_orchestration.OrchestrationTests.test_agent_count_and_depth_are_bounded": "passed",
+        "test_durable_workflows.DurableWorkflowTests.test_restart_preserves_budget_exhaustion_and_wall_deadline": "passed"
+      },
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_parallel_delegation_cannot_reset_shared_budget",
+          "outcome": "prevented_in_scenario"
+        },
+        {
+          "id": "test_workflow_recovery_scenarios.WorkflowRecoveryScenarios.test_benign_within_budget_work_continues_after_recovery",
+          "outcome": "benign_allowed"
+        },
+        {
+          "id": "test_workflow_recovery_scenarios.WorkflowRecoveryScenarios.test_restart_cannot_reset_depleted_shared_budget",
+          "outcome": "prevented_in_scenario"
+        }
+      ],
+      "note": "",
+      "limitation": "Selected local scenarios and component tests only; no full technique prevention claim."
+    },
+    {
+      "id": "AML.T0101",
+      "name": "Data Destruction via AI Agent Tool Invocation",
+      "status": "scenario_evidence",
+      "controls": [
+        "C-AUTH",
+        "C-APPROVAL"
+      ],
+      "tests": [],
+      "component_test_results": {},
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_model_generated_shell_and_sql_have_no_implicit_executor",
+          "outcome": "prevented_in_scenario"
+        }
+      ],
+      "note": "",
+      "limitation": "Selected local scenarios and component tests only; no full technique prevention claim."
+    },
+    {
+      "id": "AML.T0025",
+      "name": "Exfiltration via Cyber Means",
+      "status": "scenario_and_component_evidence",
+      "controls": [
+        "C-EGRESS"
+      ],
+      "tests": [
+        "test_egress.EgressTests.test_network_less_process_reaches_only_allowlisted_destination",
+        "test_egress.EgressTests.test_bypass_attempts_denied"
+      ],
+      "component_test_results": {
+        "test_egress.EgressTests.test_network_less_process_reaches_only_allowlisted_destination": "passed",
+        "test_egress.EgressTests.test_bypass_attempts_denied": "passed"
+      },
+      "scenarios": [
+        {
+          "id": "test_product_scenarios.LibraryScenarios.test_guard_egress_to_unlisted_or_metadata_destination_denied",
+          "outcome": "prevented_in_scenario"
+        }
+      ],
+      "note": "",
+      "limitation": "Selected local scenarios and component tests only; no full technique prevention claim."
+    },
+    {
+      "id": "AML.T0098",
+      "name": "AI Agent Tool Credential Harvesting",
+      "status": "component_evidence",
+      "controls": [
+        "C-VAULT"
+      ],
+      "tests": [
+        "test_identities.SecretStoreTests.test_encrypted_bound_and_listing_secret_free",
+        "test_egress.EgressTests.test_end_to_end_tls_provider_through_tunnel"
+      ],
+      "component_test_results": {
+        "test_identities.SecretStoreTests.test_encrypted_bound_and_listing_secret_free": "passed",
+        "test_egress.EgressTests.test_end_to_end_tls_provider_through_tunnel": "passed"
+      },
+      "scenarios": [],
+      "note": "",
+      "limitation": "Selected local scenarios and component tests only; no full technique prevention claim."
+    },
+    {
+      "id": "AML.T0083",
+      "name": "Credentials from AI Agent Configuration",
+      "status": "component_evidence",
+      "controls": [
+        "C-VAULT"
+      ],
+      "tests": [
+        "test_product_config.ProductConfigTests.test_paths_and_unknown_fields"
+      ],
+      "component_test_results": {
+        "test_product_config.ProductConfigTests.test_paths_and_unknown_fields": "passed"
+      },
+      "scenarios": [],
+      "note": "",
+      "limitation": "Selected local scenarios and component tests only; no full technique prevention claim."
+    },
+    {
+      "id": "AML.T0029",
+      "name": "Denial of AI Service",
+      "status": "gap_confirmed",
+      "controls": [
+        "C-PEER"
+      ],
+      "tests": [],
+      "component_test_results": {},
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_slowloris_can_temporarily_starve_shared_socket_before_read_deadline",
+          "outcome": "gap_confirmed"
+        }
+      ],
+      "note": "Legacy same-UID starvation is a confirmed gap; peer-bound fairness is container evidence.",
+      "limitation": "Selected local scenarios and component tests only; no full technique prevention claim."
+    },
+    {
+      "id": "AML.T0020",
+      "name": "Training Data Poisoning",
+      "status": "scope_limitation",
+      "controls": [],
+      "tests": [],
+      "component_test_results": {},
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_poisoned_model_answer_not_automatically_identified",
+          "outcome": "gap_confirmed"
+        }
+      ],
+      "note": "Scope limitation: no training-data access.",
+      "limitation": "Selected local scenarios and component tests only; no full technique prevention claim."
+    },
+    {
+      "id": "AML.T0018",
+      "name": "Manipulate AI Model",
+      "status": "scope_limitation",
+      "controls": [],
+      "tests": [],
+      "component_test_results": {},
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_poisoned_model_answer_not_automatically_identified",
+          "outcome": "gap_confirmed"
+        }
+      ],
+      "note": "Scope limitation: no model-weight access; model identity pinned by configuration only.",
+      "limitation": "Selected local scenarios and component tests only; no full technique prevention claim."
+    }
+  ]
+}

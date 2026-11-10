@@ -1,0 +1,123 @@
+{
+  "schema": "enkstein-guard.ai-security-endurance-targets/v1",
+  "name": "synthetic AI-enabled production-profile three-hour endurance",
+  "defined_at": "2026-11-07T12:04:21Z",
+  "defined_before_measurement": true,
+  "load": {
+    "actors": 4,
+    "tenants": 2,
+    "retained_votes_per_actor": 64,
+    "warmup_calls": 256,
+    "duration_seconds": 10800,
+    "requests_per_second_per_actor": 2,
+    "measured_calls": 86400,
+    "max_inflight_per_actor": 4,
+    "progress_window_seconds": 60
+  },
+  "configuration": {
+    "max_requests_per_second": 40,
+    "outcome_capacity": 200000,
+    "outcome_archive_age_seconds": 3600,
+    "outcome_archive_interval_seconds": 300,
+    "audit_archive_threshold_events": 20000,
+    "audit_archive_keep_events": 5000,
+    "audit_archive_interval_seconds": 300,
+    "vault_purge_interval_seconds": 60,
+    "security_history_capacity": 256,
+    "security_history_ttl_seconds": 21600
+  },
+  "targets": [
+    {
+      "id": "AE-01",
+      "name": "complete warmup and measured load",
+      "requirements": {
+        "warmup_calls_exact": 256,
+        "measured_calls_exact": 86400,
+        "successful_calls_exact": 86400,
+        "error_calls_max": 0,
+        "actors_complete_exact": 4,
+        "duration_seconds_exact": 10800
+      }
+    },
+    {
+      "id": "AE-02",
+      "name": "whole-run and sixty-second-window latency",
+      "requirements": {
+        "p95_ms_max": 1000,
+        "p99_ms_max": 2000,
+        "window_p99_ms_max": 5000
+      }
+    },
+    {
+      "id": "AE-03",
+      "name": "bounded Guard and egress memory",
+      "requirements": {
+        "guard_rss_mib_max": 256,
+        "egress_rss_mib_max": 96,
+        "last_hour_max_over_first_hour_max_mib": 32
+      }
+    },
+    {
+      "id": "AE-04",
+      "name": "bounded Guard descriptors and threads",
+      "requirements": {
+        "guard_fds_max": 256,
+        "guard_threads_max": 64
+      }
+    },
+    {
+      "id": "AE-05",
+      "name": "full bounded security history and active state",
+      "requirements": {
+        "security_history_records_max": 256,
+        "security_history_records_after_warmup_exact": 256,
+        "security_history_records_at_end_exact": 256,
+        "active_state_bytes_max": 268435456
+      }
+    },
+    {
+      "id": "AE-06",
+      "name": "retention and archive integrity",
+      "requirements": {
+        "retention_failures_max": 0,
+        "audit_with_archives_verified": true,
+        "outcome_archives_verified": true
+      }
+    },
+    {
+      "id": "AE-07",
+      "name": "AI path and credential separation",
+      "requirements": {
+        "phase_inspection_business_successful_equal": true,
+        "unknown_calls_max": 0,
+        "inspection_credential_hashes_exact": 2,
+        "business_credential_hashes_exact": 2,
+        "credential_hash_sets_distinct": true,
+        "configured_security_engines_exact": 2
+      }
+    },
+    {
+      "id": "AE-08",
+      "name": "candidate and target identity completeness",
+      "requirements": {
+        "image_identity_required": true,
+        "wheel_identity_required": true,
+        "dependency_lock_match_required": true,
+        "raw_saved_configuration_required": true,
+        "configuration_hash_required": true,
+        "revision_digests_required": true,
+        "target_sha256_required": true,
+        "target_deployment_revision_binding_required": true,
+        "missing_measurements_max": 0
+      }
+    }
+  ],
+  "limitations": [
+    "Regression targets, not a production SLA",
+    "Local deterministic synthetic TLS models only",
+    "Counters include a durable fsync before every synthetic upstream response",
+    "Counters do not prove per-marker duplicate execution; standard P-04 is separate no-replay evidence",
+    "Single-host endurance only; no real-model robustness or provider-network claim"
+  ],
+  "revisions": []
+}

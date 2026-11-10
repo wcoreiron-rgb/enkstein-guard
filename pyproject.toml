@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "enkstein-guard"
+version = "0.5.0rc3.dev12"
+description = "Application-scoped policy, privacy and orchestration guardrails"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {file = "LICENSE"}
+dependencies = ["cryptography>=50.0.2,<51"]
+
+[project.scripts]
+enkstein-guard = "enkstein_guard.cli:main"
+enkstein-guard-host = "enkstein_guard.daemon:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+enkstein_guard = ["coverage.json", "atlas-evidence.json"]

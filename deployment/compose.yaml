@@ -1,0 +1,61 @@
+# Runtime application/credentials are supplied by the operator; no live keys here.
+services:
+  initialize:
+    image: ${GUARD_IMAGE:-enkstein-guard:local}
+    user: "0:0"
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, FOWNER, DAC_OVERRIDE]
+    security_opt: [no-new-privileges:true]
+    entrypoint: [python, -c]
+    command: ["import os; [(os.chown(p,10001,10001),os.chmod(p,0o710 if p=='/run/guard' else 0o700)) for p in ('/run/guard','/state')]"]
+    volumes:
+      - guard-ipc:/run/guard
+      - guard-state:/state
+  guard:
+    image: ${GUARD_IMAGE:-enkstein-guard:local}
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile.alpine
+    user: "10001:10001"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    ulimits:
+      nofile: {soft: 1024, hard: 1024}
+    pids_limit: 128
+    mem_limit: 512m
+    cpus: 1
+    depends_on:
+      initialize:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    init: true
+    environment:
+      PYTHONPATH: /bootstrap
+    command: [--factory, bootstrap:build_runtime, --socket, /run/guard/guard.sock]
+    volumes:
+      - guard-ipc:/run/guard
+      - guard-state:/state
+      - ${GUARD_BOOTSTRAP_DIR:?Set operator bootstrap directory}:/bootstrap:ro
+      - ${GUARD_SECRETS_DIR:?Set private secrets directory}:/run/guard-secrets:ro
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=16m"]
+  agent:
+    image: ${GUARD_AGENT_IMAGE:?Set agent image}
+    user: "${GUARD_AGENT_UID:-11001}:10001"
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 256m
+    cpus: 1
+    init: true
+    volumes:
+      - guard-ipc:/run/guard:ro
+      - ${GUARD_AGENT_TOKEN_FILE:?Set this agent scoped token file}:/run/agent-token:ro
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=16m"]
+volumes:
+  guard-ipc:
+  guard-state:

@@ -1,0 +1,124 @@
+{
+  "schema": "enkstein-guard.soak-targets/v1",
+  "name": "production-linux-peer-bound multi-hour soak with scheduled retention",
+  "defined_at": "2026-10-28T18:08:00Z",
+  "defined_before_measurement": true,
+  "revised_at": "2026-10-29T00:50:00Z",
+  "revision_note": "Stricter only, before the final soak run: dedup probes resubmit recent completed request IDs (the earlier harness resubmitted the first ones, which a three-hour run has archived and Guard rightly refuses), and S-07 also requires that the earliest completed IDs, archived hours earlier, are refused as expired (10 per agent). No threshold was relaxed.",
+  "deployment": "same topology and host as capacity-targets-production.json",
+  "load": {
+    "agents": 4,
+    "tenants": 2,
+    "requests_per_second_per_agent": 2,
+    "duration_seconds": 10800,
+    "request_mix": "as capacity-targets-production.json"
+  },
+  "retention_configuration": {
+    "outcome_archive_age_seconds": 3600,
+    "outcome_archive_interval_seconds": 300,
+    "audit_archive_threshold_events": 20000,
+    "audit_archive_keep_events": 5000,
+    "audit_archive_interval_seconds": 300,
+    "vault_purge_interval_seconds": 60,
+    "token_ttl_seconds": 300,
+    "max_requests_per_second": 40,
+    "outcome_capacity": 200000
+  },
+  "sampling": {
+    "interval_seconds": 60
+  },
+  "targets": [
+    {
+      "id": "S-01",
+      "name": "availability",
+      "requirements": {
+        "non_ok_statuses_max": 0,
+        "every_agent_completed_min_offered_fraction": 0.95
+      }
+    },
+    {
+      "id": "S-02",
+      "name": "latency over the run and in every window, retention windows included",
+      "requirements": {
+        "p95_ms_max": 300,
+        "p99_ms_max": 750,
+        "window_p99_ms_max": 2000
+      }
+    },
+    {
+      "id": "S-03",
+      "name": "memory does not trend upward",
+      "requirements": {
+        "guard_rss_mib_max": 256,
+        "last_hour_max_over_first_hour_max_mib": 32,
+        "egress_rss_mib_max": 96
+      }
+    },
+    {
+      "id": "S-04",
+      "name": "file descriptors and threads stay flat",
+      "requirements": {
+        "guard_fds_over_first_sample_max": 16,
+        "guard_threads_max": 64
+      }
+    },
+    {
+      "id": "S-05",
+      "name": "active stores stay bounded",
+      "requirements": {
+        "outcome_records_max": 37000,
+        "audit_active_events_max": 35000,
+        "vault_live_entries_max": 2000,
+        "vault_expired_entries_max": 1000,
+        "state_bytes_max": 268435456,
+        "state_bytes_end_over_two_hour_mark_max_factor": 1.15
+      }
+    },
+    {
+      "id": "S-06",
+      "name": "retention runs on schedule during the run",
+      "requirements": {
+        "outcome_archive_runs_with_records_min": 20,
+        "audit_archive_runs_with_records_min": 6,
+        "vault_purge_runs_min": 60,
+        "retention_failures_max": 0
+      }
+    },
+    {
+      "id": "S-07",
+      "name": "integrity and no replay at the end",
+      "requirements": {
+        "audit_chain_with_archives_verified": true,
+        "outcome_archive_records_consistent": true,
+        "upstream_duplicate_markers_max": 0,
+        "dedup_probe_status": "completed_no_replay",
+        "expired_probes_per_agent": 10,
+        "expired_probe_statuses": [
+          "request_tracking_unavailable_or_conflict:request_id_expired"
+        ]
+      }
+    },
+    {
+      "id": "S-08",
+      "name": "archive growth is proportional to traffic",
+      "requirements": {
+        "archive_bytes_per_tracked_request_max": 4096
+      }
+    }
+  ],
+  "measurement_rules": "Archives are retained history and grow with traffic by design; S-08 bounds the rate. Active stores and process resources must plateau. A failed target is reported, not relaxed. Every agent must exit 0 and report its summary with at least 95 % of its offered requests; otherwise S-01 fails.",
+  "revisions": [
+    {
+      "at": "2026-10-28T18:08:30Z",
+      "note": "Revised before any soak measurement: the vault deletes expired entries inline on every insert, so the scheduled purge rarely finds any; the purge criterion now counts runs and S-05 bounds expired-but-present entries instead."
+    },
+    {
+      "at": "2026-10-28T20:43:00Z",
+      "note": "Stricter only, after an AI-assisted review of the harness and before the final run: S-01 also fails unless every agent exits 0 and reports at least 95 % of its offered requests. No threshold was relaxed."
+    },
+    {
+      "at": "2026-10-29T00:50:00Z",
+      "note": "Stricter only, before the final soak run: dedup probes resubmit recent completed request IDs (the earlier harness resubmitted the first ones, which a three-hour run has archived and Guard rightly refuses), and S-07 also requires that the earliest completed IDs, archived hours earlier, are refused as expired (10 per agent). No threshold was relaxed."
+    }
+  ]
+}

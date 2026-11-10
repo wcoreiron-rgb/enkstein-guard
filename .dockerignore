@@ -1,0 +1,16 @@
+*
+!deployment/
+!deployment/Dockerfile
+!dist/
+dist/*
+!dist/deployment/
+!dist/deployment/*.whl
+
+!deployment/requirements-linux-arm64.txt
+!dist/vendor-linux-arm64/
+!dist/vendor-linux-arm64/*.whl
+
+!deployment/Dockerfile.alpine
+!dist/vendor-linux-musl-arm64/
+!dist/vendor-linux-musl-arm64/*.whl
+!dist/vendor-linux-musl-arm64/requirements.txt

@@ -1,0 +1,117 @@
+# Production profile (production-linux-peer-bound) for one Guard host.
+#
+# Guard has no network interfaces. The only network path for connectors is the
+# separate egress proxy (own UID, own read-only allowlist from guard.json), which
+# is the only service attached to the "egress" network. Agents have no network
+# and see only the Guard IPC socket. Operator-supplied values:
+#   GUARD_IMAGE, GUARD_BOOTSTRAP_DIR (guard.json + declared context, read-only),
+#   GUARD_AGENT_IMAGE, GUARD_AGENT_TOKEN_FILE, GUARD_AGENT_UID.
+# No credentials are placed in this file or in guard.json.
+services:
+  initialize:
+    image: ${GUARD_IMAGE:-enkstein-guard:local}
+    user: "0:0"
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, FOWNER, DAC_OVERRIDE]
+    security_opt: [no-new-privileges:true]
+    entrypoint: [python, -c]
+    command:
+      - |
+        import os
+        layout = {"/run/guard": (10001, 10001, 0o710), "/run/guard-admin": (10001, 10001, 0o700),
+                  "/state": (10001, 10001, 0o700), "/state-keys": (10001, 10001, 0o700),
+                  "/archive": (10001, 10001, 0o700), "/run/guard-egress": (10002, 10003, 0o710)}
+        for path, (uid, gid, mode) in layout.items():
+            os.chown(path, uid, gid)
+            os.chmod(path, mode)
+    volumes:
+      - guard-ipc:/run/guard
+      - guard-admin:/run/guard-admin
+      - guard-state:/state
+      - guard-keys:/state-keys
+      - guard-archive:/archive
+      - guard-egress:/run/guard-egress
+  egress:
+    image: ${GUARD_IMAGE:-enkstein-guard:local}
+    user: "10002:10003"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 128m
+    cpus: 0.5
+    init: true
+    restart: unless-stopped
+    depends_on:
+      initialize:
+        condition: service_completed_successfully
+    entrypoint: [enkstein-guard]
+    command: [--config, /bootstrap/guard.json, egress, serve]
+    networks: [egress]
+    volumes:
+      - guard-egress:/run/guard-egress
+      - ${GUARD_BOOTSTRAP_DIR:?Set operator bootstrap directory}:/bootstrap:ro
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=8m"]
+  guard:
+    image: ${GUARD_IMAGE:-enkstein-guard:local}
+    user: "10001:10001"
+    group_add: ["10003"]
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    ulimits:
+      nofile: {soft: 1024, hard: 1024}
+    pids_limit: 128
+    mem_limit: 512m
+    cpus: 1
+    init: true
+    restart: unless-stopped
+    depends_on:
+      initialize:
+        condition: service_completed_successfully
+      egress:
+        condition: service_started
+    entrypoint: [enkstein-guard]
+    command: [--config, /bootstrap/guard.json, service, start]
+    healthcheck:
+      test: [CMD, enkstein-guard, --config, /bootstrap/guard.json, service, ready, --timeout, "5"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - guard-ipc:/run/guard
+      - guard-admin:/run/guard-admin
+      - guard-state:/state
+      - guard-keys:/state-keys
+      - guard-archive:/archive
+      - guard-egress:/run/guard-egress:ro
+      - ${GUARD_BOOTSTRAP_DIR:?Set operator bootstrap directory}:/bootstrap:ro
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=16m"]
+  agent:
+    image: ${GUARD_AGENT_IMAGE:?Set agent image}
+    user: "${GUARD_AGENT_UID:-11001}:10001"
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 256m
+    cpus: 1
+    init: true
+    volumes:
+      - guard-ipc:/run/guard:ro
+      - ${GUARD_AGENT_TOKEN_FILE:?Set this agent scoped token file}:/run/agent-token:ro
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=16m"]
+networks:
+  egress: {}
+volumes:
+  guard-ipc:
+  guard-admin:
+  guard-state:
+  guard-keys:
+  guard-archive:
+  guard-egress:

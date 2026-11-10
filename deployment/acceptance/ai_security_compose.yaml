@@ -1,0 +1,5 @@
+# Acceptance-only override for the synthetic AI-security TLS upstream.
+services:
+  upstream:
+    entrypoint: [python, /acceptance/ai_security_upstream.py]
+

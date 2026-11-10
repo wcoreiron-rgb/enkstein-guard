@@ -1,0 +1,17 @@
+{
+  "repository": "https://github.com/wcoreiron-rgb/enkstein",
+  "revision": "bad013544afde738e9eab0c8c9282028fd28ab3d",
+  "records": [
+    {
+      "source": "plugins/enkstein-guard/hooks/policy.py",
+      "destination": "src/enkstein_guard/policy.py",
+      "sha256": "c60fb26e1ee531617e8493149cac6f8cd739c72bb7cd4a7f885f79af22c6ac74"
+    },
+    {
+      "source": "LICENSE",
+      "destination": "LICENSE",
+      "sha256": "2069899f848391e7d8e0d019918f81ac20a70f27bed9737396137b9bf0dae9cf"
+    }
+  ],
+  "source_state": "working tree; revision identifies HEAD, per-file hashes identify imported bytes"
+}

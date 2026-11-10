@@ -1,0 +1,2 @@
+# Optional real framework profile; install the core package first.
+langgraph==1.2.16

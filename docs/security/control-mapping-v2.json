@@ -1,0 +1,380 @@
+{
+  "mapping_version": "2.3",
+  "statement": "Control-to-scenario mapping for the 0.5.0rc2 CLI product. A mapping records which implemented control a scenario exercises and its executed outcome. No category or technique is declared fully accepted.",
+  "controls": {
+    "C-AUTH": {
+      "name": "Credential digests with tenant-bound route grants",
+      "implementation": "runtime.GuardRuntime.authorize"
+    },
+    "C-PEER": {
+      "name": "Linux SO_PEERCRED peer binding before payload read",
+      "implementation": "service.GuardService peer_bindings (production profile)"
+    },
+    "C-TASK": {
+      "name": "Exact task boundaries",
+      "implementation": "intent.intent_control via route task_boundaries"
+    },
+    "C-SENS": {
+      "name": "Trusted sensitivity classification, route clearance and durable agent taint",
+      "implementation": "sensitivity.sensitivity_control, host.ProductService release check"
+    },
+    "C-DECL": {
+      "name": "Operator-declared context fingerprints",
+      "implementation": "sensitivity.DeclaredContext"
+    },
+    "C-VAULT": {
+      "name": "Model-default scoped vault tokenization with explicit operator exceptions",
+      "implementation": "privacy.Tokenizer, vault.LocalVault, productconfig.validate model-route defaults"
+    },
+    "C-RETR": {
+      "name": "Per-document retrieval authorization from Guard-owned records",
+      "implementation": "retrieval.LocalRetrieval, retrieval.RetrievalAuthorizer"
+    },
+    "C-GROUND": {
+      "name": "Citation provenance with optional strict source-extractive response contract",
+      "implementation": "retrieval.check_grounding, retrieval.grounding_control, model_responses.extract_chat_answer"
+    },
+    "C-APPROVAL": {
+      "name": "Exact-action single-use human approvals",
+      "implementation": "approvals.ApprovalBook"
+    },
+    "C-OUTCOME": {
+      "name": "Durable duplicate suppression with time-bound retention",
+      "implementation": "outcomes.OutcomeLedger"
+    },
+    "C-AUDIT": {
+      "name": "Encrypted chained audit with archives and allowlisted export",
+      "implementation": "audit.DurableAudit"
+    },
+    "C-EGRESS": {
+      "name": "Network-less Guard with independent allowlisting egress proxy",
+      "implementation": "egress.EgressProxy, deployment/compose.production.yaml"
+    },
+    "C-ADMIT": {
+      "name": "Component hash pin plus declared-capability static check",
+      "implementation": "orchestration.Admission, admission.scan_python"
+    },
+    "C-BUDGET": {
+      "name": "Shared workflow budgets with optional encrypted single-host recovery",
+      "implementation": "orchestration.ProtectedOrchestrator, workflow_store.WorkflowStore"
+    },
+    "C-REVOKE": {
+      "name": "Credential revocation with in-flight cancellation",
+      "implementation": "identities.IdentityStore, host.GuardHost.reload, orchestration.cancel"
+    },
+    "C-LABEL": {
+      "name": "Workflow-wide sticky labels across artifacts and handoffs",
+      "implementation": "orchestration.ProtectedOrchestrator"
+    },
+    "C-INSPECT": {
+      "name": "Required inspection controls fail closed",
+      "implementation": "runtime.GuardRuntime.execute, contracts.combine_results"
+    },
+    "C-PROVIDER": {
+      "name": "Text-only provider request allowlist (no provider-side URL fetch, hosted tools, storage or media)",
+      "implementation": "providers.chat_request_allowed, providers.BrokeredChatProvider.call"
+    },
+    "C-DOMAIN": {
+      "name": "Backend identity for round-trip labels: canonical host names and declared data domains",
+      "implementation": "backend_inventory.resolve_production_connectors, productconfig.backend_groups, production round-trip validation"
+    },
+    "C-AI": {
+      "name": "Configured action-bound AI assessment with deterministic precedence and actor-scoped context (synthetic wiring evidence)",
+      "implementation": "security_assessment.ChatSecurityAnalyzer, ai_security.AISecurityControl, security_context.SecurityHistoryStore, host internal inspection boundary"
+    }
+  },
+  "owasp": {
+    "LLM01:2026": {
+      "controls": [
+        "C-AUTH",
+        "C-TASK",
+        "C-INSPECT",
+        "C-AI"
+      ],
+      "residual_risk": "Injected text cannot grant tools, identities or task scope in tested boundaries; semantic hijack of already-permitted actions and live-model robustness are not established. AI-engine scenarios use fixed synthetic assessments to validate enforcement wiring; live-model detection accuracy and attack robustness are not established."
+    },
+    "LLM02:2026": {
+      "controls": [
+        "C-VAULT",
+        "C-SENS",
+        "C-DECL",
+        "C-LABEL",
+        "C-PROVIDER",
+        "C-DOMAIN",
+        "C-AI"
+      ],
+      "residual_risk": "Detected patterns, configured field rules, declared context and Guard-observed data are controlled; undeclared unlabelled confidential prose that never passed through Guard is not recognized. Host names that reach one backend share labels only when declared as one data_domain; undeclared DNS-level aliases are not discovered (confirmed gap). Provider features enabled outside the request (for example a model with built-in browsing) are the operator's choice. AI-engine scenarios use fixed synthetic assessments to validate enforcement wiring; live-model detection accuracy and attack robustness are not established."
+    },
+    "LLM03:2026": {
+      "controls": [
+        "C-AUTH",
+        "C-TASK",
+        "C-APPROVAL",
+        "C-REVOKE"
+      ],
+      "residual_risk": "Configured grants, boundaries and approvals tested; downstream business authorization remains the connector's responsibility."
+    },
+    "LLM04:2026": {
+      "controls": [
+        "C-ADMIT"
+      ],
+      "residual_risk": "Replacement and undeclared capabilities are denied; a correctly pinned component that misuses declared capabilities is not classified (confirmed gap)."
+    },
+    "LLM05:2026": {
+      "controls": [],
+      "residual_risk": "Scope limitation: Guard has no access to training data or model weights. Model identity is pinned by configuration and retrieval content comes only from operator-ingested records; poisoned answers are not detected (confirmed gap)."
+    },
+    "LLM06:2026": {
+      "controls": [
+        "C-BUDGET",
+        "C-PEER",
+        "C-OUTCOME",
+        "C-AI"
+      ],
+      "residual_risk": "Shared budgets and per-UID admission (container evidence) tested; same-UID legacy mode remains vulnerable (confirmed gap); host-level CPU/memory exhaustion needs operator limits. AI-engine scenarios use fixed synthetic assessments to validate enforcement wiring; live-model detection accuracy and attack robustness are not established."
+    },
+    "LLM07:2026": {
+      "controls": [
+        "C-GROUND"
+      ],
+      "residual_risk": "Citation mode does not prove semantic support (confirmed gap). Optional extractive mode rejects added prose and enforces authorized verbatim spans in a strict format; source truth and misleading span selection/concatenation remain unverified."
+    },
+    "LLM08:2026": {
+      "controls": [
+        "C-DECL",
+        "C-SENS"
+      ],
+      "residual_risk": "Declared context is withheld including common obfuscations; paraphrase and undeclared context are missed (confirmed gaps)."
+    },
+    "LLM09:2026": {
+      "controls": [
+        "C-RETR"
+      ],
+      "residual_risk": "The supported retrieval integrations authorize every document from trusted records; generic tool connectors used for retrieval receive no document ACLs (confirmed gap)."
+    },
+    "LLM10:2026": {
+      "controls": [
+        "C-AUTH",
+        "C-EGRESS"
+      ],
+      "residual_risk": "No implicit executor; Guard egress is allowlisted. Sink-specific validation of generated content remains the connector's responsibility."
+    },
+    "ASI01:2026": {
+      "controls": [
+        "C-AUTH",
+        "C-TASK",
+        "C-AI"
+      ],
+      "residual_risk": "Retrieved or memorized instructions cannot redefine authority; hijack within the permitted task remains possible. AI-engine scenarios use fixed synthetic assessments to validate enforcement wiring; live-model detection accuracy and attack robustness are not established."
+    },
+    "ASI02:2026": {
+      "controls": [
+        "C-AUTH",
+        "C-TASK",
+        "C-APPROVAL",
+        "C-PROVIDER"
+      ],
+      "residual_risk": "Unknown tools, escalation, out-of-boundary arguments and provider-side tool or fetch fields are denied; per-resource business policy must be configured."
+    },
+    "ASI03:2026": {
+      "controls": [
+        "C-AUTH",
+        "C-PEER",
+        "C-REVOKE",
+        "C-RETR",
+        "C-AI"
+      ],
+      "residual_risk": "Forged, stolen-from-another-UID and revoked identities denied (peer binding in container evidence); compromise of the Guard host or bootstrap is out of scope. AI-engine scenarios use fixed synthetic assessments to validate enforcement wiring; live-model detection accuracy and attack robustness are not established."
+    },
+    "ASI04:2026": {
+      "controls": [
+        "C-ADMIT"
+      ],
+      "residual_risk": "As LLM04; MCP/skill package scanning is not provided."
+    },
+    "ASI05:2026": {
+      "controls": [
+        "C-EGRESS"
+      ],
+      "residual_risk": "No implicit code execution route; container isolation evidence is platform-scoped and kernel escape is not ruled out."
+    },
+    "ASI06:2026": {
+      "controls": [
+        "C-LABEL",
+        "C-RETR"
+      ],
+      "residual_risk": "Memory writes are untrusted and cannot grant authority; retrieval identity is never caller-supplied; semantic poisoning detection is not provided."
+    },
+    "ASI07:2026": {
+      "controls": [
+        "C-LABEL",
+        "C-SENS",
+        "C-AI"
+      ],
+      "residual_risk": "In-coordinator handoffs, replay and label propagation tested; network agent-to-agent messaging is unsupported. AI-engine scenarios use fixed synthetic assessments to validate enforcement wiring; live-model detection accuracy and attack robustness are not established."
+    },
+    "ASI08:2026": {
+      "controls": [
+        "C-INSPECT",
+        "C-BUDGET",
+        "C-OUTCOME",
+        "C-AI"
+      ],
+      "residual_risk": "Inspection outages deny before side effects; uncertain outcomes are never replayed; single-host only, no HA. AI-engine scenarios use fixed synthetic assessments to validate enforcement wiring; live-model detection accuracy and attack robustness are not established."
+    },
+    "ASI09:2026": {
+      "controls": [
+        "C-APPROVAL"
+      ],
+      "residual_risk": "Substituted, replayed, cross-tenant and agent self-approvals rejected; human social-engineering resistance is not established."
+    },
+    "ASI10:2026": {
+      "controls": [
+        "C-REVOKE",
+        "C-LABEL"
+      ],
+      "residual_risk": "Revocation stops new work and cancels in-flight work; side effects already performed are not rolled back."
+    }
+  },
+  "atlas": {
+    "AML.T0051": {
+      "controls": [
+        "C-AUTH",
+        "C-TASK"
+      ],
+      "component_tests": [
+        "test_orchestration.OrchestrationTests.test_memory_is_untrusted_and_cannot_grant_authority"
+      ]
+    },
+    "AML.T0053": {
+      "controls": [
+        "C-AUTH"
+      ],
+      "component_tests": []
+    },
+    "AML.T0055": {
+      "controls": [
+        "C-VAULT"
+      ],
+      "component_tests": [
+        "test_broker.BrokerTests.test_scoped_delivery_and_revocation",
+        "test_private_ai.PrivateTests.test_secrets_and_pii_never_reach_model_engines_or_audit"
+      ]
+    },
+    "AML.T0056": {
+      "controls": [
+        "C-DECL"
+      ],
+      "component_tests": [
+        "test_sensitivity.DeclaredContextTests.test_verbatim_and_obfuscated_canary"
+      ]
+    },
+    "AML.T0057": {
+      "controls": [
+        "C-SENS",
+        "C-RETR",
+        "C-DOMAIN"
+      ],
+      "component_tests": [
+        "test_retrieval.RetrievalTests.test_search_returns_only_authorized_documents_ranked_after_filtering",
+        "test_product_config.ProductConfigTests.test_declared_data_domain_joins_aliases_for_the_round_trip_rule"
+      ]
+    },
+    "AML.T0071": {
+      "controls": [
+        "C-RETR"
+      ],
+      "component_tests": [
+        "test_retrieval.RetrievalTests.test_forged_backend_metadata_and_substituted_content_ignored"
+      ]
+    },
+    "AML.T0080": {
+      "controls": [
+        "C-LABEL"
+      ],
+      "component_tests": [
+        "test_orchestration.OrchestrationTests.test_memory_is_untrusted_and_cannot_grant_authority"
+      ]
+    },
+    "AML.T0086": {
+      "controls": [
+        "C-SENS",
+        "C-LABEL",
+        "C-PROVIDER"
+      ],
+      "component_tests": [
+        "test_orchestration.OrchestrationTests.test_cross_agent_summary_exfiltration_denied",
+        "test_providers.ProviderTests.test_provider_side_fetch_hosted_tools_and_storage_refused_before_dispatch"
+      ]
+    },
+    "AML.T0010.005": {
+      "controls": [
+        "C-ADMIT"
+      ],
+      "component_tests": [
+        "test_orchestration.OrchestrationTests.test_admission_detects_changed_component",
+        "test_admission.CapabilityScanTests.test_admission_denies_undeclared_capability"
+      ]
+    },
+    "AML.T0034.002": {
+      "controls": [
+        "C-BUDGET"
+      ],
+      "component_tests": [
+        "test_orchestration.OrchestrationTests.test_shared_call_budget_cannot_be_reset_by_child",
+        "test_orchestration.OrchestrationTests.test_agent_count_and_depth_are_bounded",
+        "test_durable_workflows.DurableWorkflowTests.test_restart_preserves_budget_exhaustion_and_wall_deadline"
+      ]
+    },
+    "AML.T0101": {
+      "controls": [
+        "C-AUTH",
+        "C-APPROVAL"
+      ],
+      "component_tests": []
+    },
+    "AML.T0025": {
+      "controls": [
+        "C-EGRESS"
+      ],
+      "component_tests": [
+        "test_egress.EgressTests.test_network_less_process_reaches_only_allowlisted_destination",
+        "test_egress.EgressTests.test_bypass_attempts_denied"
+      ]
+    },
+    "AML.T0098": {
+      "controls": [
+        "C-VAULT"
+      ],
+      "component_tests": [
+        "test_identities.SecretStoreTests.test_encrypted_bound_and_listing_secret_free",
+        "test_egress.EgressTests.test_end_to_end_tls_provider_through_tunnel"
+      ]
+    },
+    "AML.T0083": {
+      "controls": [
+        "C-VAULT"
+      ],
+      "component_tests": [
+        "test_product_config.ProductConfigTests.test_paths_and_unknown_fields"
+      ]
+    },
+    "AML.T0029": {
+      "controls": [
+        "C-PEER"
+      ],
+      "component_tests": [],
+      "note": "Legacy same-UID starvation is a confirmed gap; peer-bound fairness is container evidence."
+    },
+    "AML.T0020": {
+      "controls": [],
+      "component_tests": [],
+      "note": "Scope limitation: no training-data access."
+    },
+    "AML.T0018": {
+      "controls": [],
+      "component_tests": [],
+      "note": "Scope limitation: no model-weight access; model identity pinned by configuration only."
+    }
+  }
+}

@@ -1,0 +1,1380 @@
+{
+  "schema_version": 2,
+  "mapping_version": "2.3",
+  "product_version": "0.5.0rc3.dev12",
+  "frameworks": [
+    {
+      "name": "OWASP LLM Top 10",
+      "edition": "2026",
+      "source": "https://github.com/GenAI-Security-Project/GenAI-LLM-Top10/blob/9253e38ade58e959b531c0c5c9a4842272c9cd0e/2026/README.md",
+      "commit": "9253e38ade58e959b531c0c5c9a4842272c9cd0e",
+      "note": "Published canonical list checked and source bytes hashed in references manifest."
+    },
+    {
+      "name": "OWASP Agentic Top 10",
+      "edition": "2026",
+      "source": "https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/",
+      "note": "Official resource checked; immutable release artifact pin still required."
+    }
+  ],
+  "sources": {
+    "owasp": [
+      {
+        "file": "owasp-llm-2026.md",
+        "sha256": "8091b002286bd6bdd9741f5a45ca93c1bd55d3548325b6481116567c557293ea",
+        "source": "https://github.com/GenAI-Security-Project/GenAI-LLM-Top10/blob/9253e38ade58e959b531c0c5c9a4842272c9cd0e/2026/README.md"
+      },
+      {
+        "file": "owasp-agentic-2026.pdf",
+        "sha256": "50d8bc12248106e2b19fd079fa201082458eab56a5e60a8ed4c74c336e054b00",
+        "source": "https://genai.owasp.org/download/52117/?tmstv=1765059207"
+      }
+    ],
+    "atlas": {
+      "commit": "3259f388d19cbcca11bacf12a0ef97f4198f711b",
+      "path": "dist/v6/ATLAS-2026.09.yaml",
+      "sha256": "935efa93e28294432d3e2f537eb94991ef8d1f8c58341cd360ea3321ddb66688",
+      "content_version": "2026.09"
+    }
+  },
+  "controls": {
+    "C-AUTH": {
+      "name": "Credential digests with tenant-bound route grants",
+      "implementation": "runtime.GuardRuntime.authorize"
+    },
+    "C-PEER": {
+      "name": "Linux SO_PEERCRED peer binding before payload read",
+      "implementation": "service.GuardService peer_bindings (production profile)"
+    },
+    "C-TASK": {
+      "name": "Exact task boundaries",
+      "implementation": "intent.intent_control via route task_boundaries"
+    },
+    "C-SENS": {
+      "name": "Trusted sensitivity classification, route clearance and durable agent taint",
+      "implementation": "sensitivity.sensitivity_control, host.ProductService release check"
+    },
+    "C-DECL": {
+      "name": "Operator-declared context fingerprints",
+      "implementation": "sensitivity.DeclaredContext"
+    },
+    "C-VAULT": {
+      "name": "Model-default scoped vault tokenization with explicit operator exceptions",
+      "implementation": "privacy.Tokenizer, vault.LocalVault, productconfig.validate model-route defaults"
+    },
+    "C-RETR": {
+      "name": "Per-document retrieval authorization from Guard-owned records",
+      "implementation": "retrieval.LocalRetrieval, retrieval.RetrievalAuthorizer"
+    },
+    "C-GROUND": {
+      "name": "Citation provenance with optional strict source-extractive response contract",
+      "implementation": "retrieval.check_grounding, retrieval.grounding_control, model_responses.extract_chat_answer"
+    },
+    "C-APPROVAL": {
+      "name": "Exact-action single-use human approvals",
+      "implementation": "approvals.ApprovalBook"
+    },
+    "C-OUTCOME": {
+      "name": "Durable duplicate suppression with time-bound retention",
+      "implementation": "outcomes.OutcomeLedger"
+    },
+    "C-AUDIT": {
+      "name": "Encrypted chained audit with archives and allowlisted export",
+      "implementation": "audit.DurableAudit"
+    },
+    "C-EGRESS": {
+      "name": "Network-less Guard with independent allowlisting egress proxy",
+      "implementation": "egress.EgressProxy, deployment/compose.production.yaml"
+    },
+    "C-ADMIT": {
+      "name": "Component hash pin plus declared-capability static check",
+      "implementation": "orchestration.Admission, admission.scan_python"
+    },
+    "C-BUDGET": {
+      "name": "Shared workflow budgets with optional encrypted single-host recovery",
+      "implementation": "orchestration.ProtectedOrchestrator, workflow_store.WorkflowStore"
+    },
+    "C-REVOKE": {
+      "name": "Credential revocation with in-flight cancellation",
+      "implementation": "identities.IdentityStore, host.GuardHost.reload, orchestration.cancel"
+    },
+    "C-LABEL": {
+      "name": "Workflow-wide sticky labels across artifacts and handoffs",
+      "implementation": "orchestration.ProtectedOrchestrator"
+    },
+    "C-INSPECT": {
+      "name": "Required inspection controls fail closed",
+      "implementation": "runtime.GuardRuntime.execute, contracts.combine_results"
+    },
+    "C-PROVIDER": {
+      "name": "Text-only provider request allowlist (no provider-side URL fetch, hosted tools, storage or media)",
+      "implementation": "providers.chat_request_allowed, providers.BrokeredChatProvider.call"
+    },
+    "C-DOMAIN": {
+      "name": "Backend identity for round-trip labels: canonical host names and declared data domains",
+      "implementation": "backend_inventory.resolve_production_connectors, productconfig.backend_groups, production round-trip validation"
+    },
+    "C-AI": {
+      "name": "Configured action-bound AI assessment with deterministic precedence and actor-scoped context (synthetic wiring evidence)",
+      "implementation": "security_assessment.ChatSecurityAnalyzer, ai_security.AISecurityControl, security_context.SecurityHistoryStore, host internal inspection boundary"
+    }
+  },
+  "requirements": [
+    {
+      "id": "LLM01:2026",
+      "name": "Prompt Injection",
+      "owner": "Guard runtime",
+      "controls": [
+        "C-AUTH",
+        "C-TASK",
+        "C-INSPECT",
+        "C-AI"
+      ],
+      "control_names": [
+        "Credential digests with tenant-bound route grants",
+        "Exact task boundaries",
+        "Required inspection controls fail closed",
+        "Configured action-bound AI assessment with deterministic precedence and actor-scoped context (synthetic wiring evidence)"
+      ],
+      "acceptance": "indirect content cannot expand tool permissions",
+      "acceptance_test_id": "AC-LLM-01",
+      "status": "scoped_evidence_only",
+      "executed_tests": [
+        "test_ai_engine_scenarios.AIEngineScenarios.test_ai_allow_cannot_override_separate_hard_deny",
+        "test_ai_engine_scenarios.AIEngineScenarios.test_untrusted_assertions_and_extra_model_fields_cannot_forge_authority",
+        "test_attack_scenarios.AttackScenarios.test_benign_security_discussion_allowed",
+        "test_attack_scenarios.AttackScenarios.test_direct_injection_cannot_grant_tool_authority",
+        "test_attack_scenarios.AttackScenarios.test_indirect_memory_injection_cannot_grant_authority"
+      ],
+      "scenarios": [
+        {
+          "id": "test_ai_engine_scenarios.AIEngineScenarios.test_ai_allow_cannot_override_separate_hard_deny",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "synthetic provider/control wiring, not live model robustness"
+        },
+        {
+          "id": "test_ai_engine_scenarios.AIEngineScenarios.test_untrusted_assertions_and_extra_model_fields_cannot_forge_authority",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "synthetic provider/control wiring, not live model robustness"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_benign_security_discussion_allowed",
+          "kind": "benign",
+          "outcome": "benign_allowed",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_direct_injection_cannot_grant_tool_authority",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_indirect_memory_injection_cannot_grant_authority",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        }
+      ],
+      "counts": {
+        "prevented_in_scenario": 4,
+        "benign_allowed": 1,
+        "gap_confirmed": 0
+      },
+      "residual_risk": "Injected text cannot grant tools, identities or task scope in tested boundaries; semantic hijack of already-permitted actions and live-model robustness are not established. AI-engine scenarios use fixed synthetic assessments to validate enforcement wiring; live-model detection accuracy and attack robustness are not established.",
+      "full_category_acceptance": false
+    },
+    {
+      "id": "LLM02:2026",
+      "name": "Sensitive Information Disclosure",
+      "owner": "Guard runtime",
+      "controls": [
+        "C-VAULT",
+        "C-SENS",
+        "C-DECL",
+        "C-LABEL",
+        "C-PROVIDER",
+        "C-DOMAIN",
+        "C-AI"
+      ],
+      "control_names": [
+        "Model-default scoped vault tokenization with explicit operator exceptions",
+        "Trusted sensitivity classification, route clearance and durable agent taint",
+        "Operator-declared context fingerprints",
+        "Workflow-wide sticky labels across artifacts and handoffs",
+        "Text-only provider request allowlist (no provider-side URL fetch, hosted tools, storage or media)",
+        "Backend identity for round-trip labels: canonical host names and declared data domains",
+        "Configured action-bound AI assessment with deterministic precedence and actor-scoped context (synthetic wiring evidence)"
+      ],
+      "acceptance": "secrets absent from model capture and unauthorized sinks",
+      "acceptance_test_id": "AC-LLM-02",
+      "status": "scoped_evidence_only",
+      "executed_tests": [
+        "test_ai_engine_scenarios.AIEngineScenarios.test_replayed_stale_assessment_cannot_authorize_another_operation",
+        "test_ai_engine_scenarios.AIEngineScenarios.test_sensitive_values_and_numeric_cards_do_not_reach_fake_provider_request",
+        "test_attack_scenarios.AttackScenarios.test_cross_agent_summary_does_not_remove_confidential_label",
+        "test_attack_scenarios.AttackScenarios.test_nested_pii_and_secret_values_absent_from_model_and_inspectors",
+        "test_attack_scenarios.AttackScenarios.test_stolen_receipt_wrong_identity_and_replay_denied",
+        "test_product_scenarios.LibraryScenarios.test_declared_alias_cannot_read_back_data_below_its_label",
+        "test_product_scenarios.LibraryScenarios.test_delegated_child_cannot_send_declared_context_externally",
+        "test_product_scenarios.LibraryScenarios.test_provider_side_url_fetch_and_hosted_tools_refused_before_dispatch",
+        "test_product_scenarios.LibraryScenarios.test_undeclared_dns_alias_is_rejected_without_trusted_inventory",
+        "test_product_scenarios.ProductScenarios.test_benign_internal_work_allowed",
+        "test_product_scenarios.ProductScenarios.test_card_number_smuggled_as_json_number_denied_to_external_route",
+        "test_product_scenarios.ProductScenarios.test_tainted_agent_summary_to_external_destination_denied",
+        "test_workflow_recovery_scenarios.WorkflowRecoveryScenarios.test_sensitive_handoff_remains_blocked_after_recovery"
+      ],
+      "scenarios": [
+        {
+          "id": "test_ai_engine_scenarios.AIEngineScenarios.test_replayed_stale_assessment_cannot_authorize_another_operation",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "synthetic provider/control wiring, not live model robustness"
+        },
+        {
+          "id": "test_ai_engine_scenarios.AIEngineScenarios.test_sensitive_values_and_numeric_cards_do_not_reach_fake_provider_request",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "synthetic provider/control wiring, not live model robustness"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_cross_agent_summary_does_not_remove_confidential_label",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_nested_pii_and_secret_values_absent_from_model_and_inspectors",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_stolen_receipt_wrong_identity_and_replay_denied",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_product_scenarios.LibraryScenarios.test_declared_alias_cannot_read_back_data_below_its_label",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_product_scenarios.LibraryScenarios.test_delegated_child_cannot_send_declared_context_externally",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_product_scenarios.LibraryScenarios.test_provider_side_url_fetch_and_hosted_tools_refused_before_dispatch",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_product_scenarios.LibraryScenarios.test_undeclared_dns_alias_is_rejected_without_trusted_inventory",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_product_scenarios.ProductScenarios.test_benign_internal_work_allowed",
+          "kind": "benign",
+          "outcome": "benign_allowed",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_product_scenarios.ProductScenarios.test_card_number_smuggled_as_json_number_denied_to_external_route",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_product_scenarios.ProductScenarios.test_tainted_agent_summary_to_external_destination_denied",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_workflow_recovery_scenarios.WorkflowRecoveryScenarios.test_sensitive_handoff_remains_blocked_after_recovery",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        }
+      ],
+      "counts": {
+        "prevented_in_scenario": 12,
+        "benign_allowed": 1,
+        "gap_confirmed": 0
+      },
+      "residual_risk": "Detected patterns, configured field rules, declared context and Guard-observed data are controlled; undeclared unlabelled confidential prose that never passed through Guard is not recognized. Host names that reach one backend share labels only when declared as one data_domain; undeclared DNS-level aliases are not discovered (confirmed gap). Provider features enabled outside the request (for example a model with built-in browsing) are the operator's choice. AI-engine scenarios use fixed synthetic assessments to validate enforcement wiring; live-model detection accuracy and attack robustness are not established.",
+      "full_category_acceptance": false
+    },
+    {
+      "id": "LLM03:2026",
+      "name": "Excessive Agency",
+      "owner": "Guard runtime",
+      "controls": [
+        "C-AUTH",
+        "C-TASK",
+        "C-APPROVAL",
+        "C-REVOKE"
+      ],
+      "control_names": [
+        "Credential digests with tenant-bound route grants",
+        "Exact task boundaries",
+        "Exact-action single-use human approvals",
+        "Credential revocation with in-flight cancellation"
+      ],
+      "acceptance": "unauthorized tool and destination denied",
+      "acceptance_test_id": "AC-LLM-03",
+      "status": "scoped_evidence_only",
+      "executed_tests": [
+        "test_attack_scenarios.AttackScenarios.test_authorized_routine_action_allowed",
+        "test_attack_scenarios.AttackScenarios.test_delegated_privilege_escalation_and_unknown_tool_denied"
+      ],
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_authorized_routine_action_allowed",
+          "kind": "benign",
+          "outcome": "benign_allowed",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_delegated_privilege_escalation_and_unknown_tool_denied",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        }
+      ],
+      "counts": {
+        "prevented_in_scenario": 1,
+        "benign_allowed": 1,
+        "gap_confirmed": 0
+      },
+      "residual_risk": "Configured grants, boundaries and approvals tested; downstream business authorization remains the connector's responsibility.",
+      "full_category_acceptance": false
+    },
+    {
+      "id": "LLM04:2026",
+      "name": "Supply Chain",
+      "owner": "Guard runtime",
+      "controls": [
+        "C-ADMIT"
+      ],
+      "control_names": [
+        "Component hash pin plus declared-capability static check"
+      ],
+      "acceptance": "unapproved tool or dependency denied before loading",
+      "acceptance_test_id": "AC-LLM-04",
+      "status": "gap_confirmed",
+      "executed_tests": [
+        "test_attack_scenarios.AttackScenarios.test_component_replacement_during_inspection_denied",
+        "test_attack_scenarios.AttackScenarios.test_correctly_pinned_malicious_tool_is_not_automatically_classified",
+        "test_product_scenarios.LibraryScenarios.test_component_with_undeclared_network_capability_rejected"
+      ],
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_component_replacement_during_inspection_denied",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_correctly_pinned_malicious_tool_is_not_automatically_classified",
+          "kind": "known_gap",
+          "outcome": "gap_confirmed",
+          "scope": "hash pinning plus declared-capability check is not malware classification"
+        },
+        {
+          "id": "test_product_scenarios.LibraryScenarios.test_component_with_undeclared_network_capability_rejected",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        }
+      ],
+      "counts": {
+        "prevented_in_scenario": 2,
+        "benign_allowed": 0,
+        "gap_confirmed": 1
+      },
+      "residual_risk": "Replacement and undeclared capabilities are denied; a correctly pinned component that misuses declared capabilities is not classified (confirmed gap).",
+      "full_category_acceptance": false
+    },
+    {
+      "id": "LLM05:2026",
+      "name": "Data and Model Poisoning",
+      "owner": "Guard runtime",
+      "controls": [],
+      "control_names": [],
+      "acceptance": "poisoned source quarantined and rollback works",
+      "acceptance_test_id": "AC-LLM-05",
+      "status": "gap_confirmed",
+      "executed_tests": [
+        "test_attack_scenarios.AttackScenarios.test_poisoned_model_answer_not_automatically_identified"
+      ],
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_poisoned_model_answer_not_automatically_identified",
+          "kind": "known_gap",
+          "outcome": "gap_confirmed",
+          "scope": "scope limitation: Guard has no access to training data or weights; model pinning and retrieval integrity only"
+        }
+      ],
+      "counts": {
+        "prevented_in_scenario": 0,
+        "benign_allowed": 0,
+        "gap_confirmed": 1
+      },
+      "residual_risk": "Scope limitation: Guard has no access to training data or model weights. Model identity is pinned by configuration and retrieval content comes only from operator-ingested records; poisoned answers are not detected (confirmed gap).",
+      "full_category_acceptance": false
+    },
+    {
+      "id": "LLM06:2026",
+      "name": "Unbounded Consumption",
+      "owner": "Guard runtime",
+      "controls": [
+        "C-BUDGET",
+        "C-PEER",
+        "C-OUTCOME",
+        "C-AI"
+      ],
+      "control_names": [
+        "Shared workflow budgets with optional encrypted single-host recovery",
+        "Linux SO_PEERCRED peer binding before payload read",
+        "Durable duplicate suppression with time-bound retention",
+        "Configured action-bound AI assessment with deterministic precedence and actor-scoped context (synthetic wiring evidence)"
+      ],
+      "acceptance": "delegation cannot evade aggregate limits",
+      "acceptance_test_id": "AC-LLM-06",
+      "status": "gap_confirmed",
+      "executed_tests": [
+        "test_ai_engine_scenarios.AIEngineScenarios.test_ai_deny_prevents_target_transport",
+        "test_ai_engine_scenarios.AIEngineScenarios.test_model_or_parse_outage_denies_required_engine",
+        "test_ai_engine_scenarios.AIEngineScenarios.test_valid_low_risk_assessment_permits_unchanged_target_payload",
+        "test_attack_scenarios.AttackScenarios.test_parallel_delegation_cannot_reset_shared_budget",
+        "test_attack_scenarios.AttackScenarios.test_slowloris_can_temporarily_starve_shared_socket_before_read_deadline",
+        "test_product_scenarios.LibraryScenarios.test_production_profile_rejects_shared_or_missing_peer_identity",
+        "test_product_scenarios.LibraryScenarios.test_saturated_provider_is_refused_before_dispatch_not_unknown",
+        "test_workflow_recovery_scenarios.WorkflowRecoveryScenarios.test_benign_within_budget_work_continues_after_recovery",
+        "test_workflow_recovery_scenarios.WorkflowRecoveryScenarios.test_restart_cannot_reset_depleted_shared_budget"
+      ],
+      "scenarios": [
+        {
+          "id": "test_ai_engine_scenarios.AIEngineScenarios.test_ai_deny_prevents_target_transport",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "synthetic provider/control wiring, not live model robustness"
+        },
+        {
+          "id": "test_ai_engine_scenarios.AIEngineScenarios.test_model_or_parse_outage_denies_required_engine",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "synthetic provider/control wiring, not live model robustness"
+        },
+        {
+          "id": "test_ai_engine_scenarios.AIEngineScenarios.test_valid_low_risk_assessment_permits_unchanged_target_payload",
+          "kind": "benign",
+          "outcome": "benign_allowed",
+          "scope": "synthetic provider/control wiring, not live model robustness"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_parallel_delegation_cannot_reset_shared_budget",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_slowloris_can_temporarily_starve_shared_socket_before_read_deadline",
+          "kind": "known_gap",
+          "outcome": "gap_confirmed",
+          "scope": "legacy shared-UID mode only; the production profile requires peer bindings (container evidence)"
+        },
+        {
+          "id": "test_product_scenarios.LibraryScenarios.test_production_profile_rejects_shared_or_missing_peer_identity",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_product_scenarios.LibraryScenarios.test_saturated_provider_is_refused_before_dispatch_not_unknown",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_workflow_recovery_scenarios.WorkflowRecoveryScenarios.test_benign_within_budget_work_continues_after_recovery",
+          "kind": "benign",
+          "outcome": "benign_allowed",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_workflow_recovery_scenarios.WorkflowRecoveryScenarios.test_restart_cannot_reset_depleted_shared_budget",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        }
+      ],
+      "counts": {
+        "prevented_in_scenario": 6,
+        "benign_allowed": 2,
+        "gap_confirmed": 1
+      },
+      "residual_risk": "Shared budgets and per-UID admission (container evidence) tested; same-UID legacy mode remains vulnerable (confirmed gap); host-level CPU/memory exhaustion needs operator limits. AI-engine scenarios use fixed synthetic assessments to validate enforcement wiring; live-model detection accuracy and attack robustness are not established.",
+      "full_category_acceptance": false
+    },
+    {
+      "id": "LLM07:2026",
+      "name": "Misinformation",
+      "owner": "Guard runtime",
+      "controls": [
+        "C-GROUND"
+      ],
+      "control_names": [
+        "Citation provenance with optional strict source-extractive response contract"
+      ],
+      "acceptance": "unsupported citation flagged and high-risk action held",
+      "acceptance_test_id": "AC-LLM-07",
+      "status": "gap_confirmed",
+      "executed_tests": [
+        "test_attack_scenarios.AttackScenarios.test_unsupported_claim_with_real_citation_not_rejected",
+        "test_extractive_scenarios.ExtractiveScenarios.test_authorized_exact_extract_is_released",
+        "test_extractive_scenarios.ExtractiveScenarios.test_extra_claim_field_cannot_bypass_extractive_contract",
+        "test_extractive_scenarios.ExtractiveScenarios.test_extract_from_unprovided_source_is_rejected",
+        "test_extractive_scenarios.ExtractiveScenarios.test_extract_with_real_citation_cannot_include_added_claim",
+        "test_product_scenarios.LibraryScenarios.test_fabricated_citation_rejected_by_grounding_control"
+      ],
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_unsupported_claim_with_real_citation_not_rejected",
+          "kind": "known_gap",
+          "outcome": "gap_confirmed",
+          "scope": "grounding verifies citation provenance and quotes, not semantic entailment"
+        },
+        {
+          "id": "test_extractive_scenarios.ExtractiveScenarios.test_authorized_exact_extract_is_released",
+          "kind": "benign",
+          "outcome": "benign_allowed",
+          "scope": "authorized exact source text is released in extractive mode"
+        },
+        {
+          "id": "test_extractive_scenarios.ExtractiveScenarios.test_extra_claim_field_cannot_bypass_extractive_contract",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "extractive mode refuses extra prose-bearing fields"
+        },
+        {
+          "id": "test_extractive_scenarios.ExtractiveScenarios.test_extract_from_unprovided_source_is_rejected",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "extractive mode refuses citations outside the supplied authorized context"
+        },
+        {
+          "id": "test_extractive_scenarios.ExtractiveScenarios.test_extract_with_real_citation_cannot_include_added_claim",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "explicit extractive mode refuses added prose despite real source citation"
+        },
+        {
+          "id": "test_product_scenarios.LibraryScenarios.test_fabricated_citation_rejected_by_grounding_control",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        }
+      ],
+      "counts": {
+        "prevented_in_scenario": 4,
+        "benign_allowed": 1,
+        "gap_confirmed": 1
+      },
+      "residual_risk": "Citation mode does not prove semantic support (confirmed gap). Optional extractive mode rejects added prose and enforces authorized verbatim spans in a strict format; source truth and misleading span selection/concatenation remain unverified.",
+      "full_category_acceptance": false
+    },
+    {
+      "id": "LLM08:2026",
+      "name": "Hidden Context Exposure",
+      "owner": "Guard runtime",
+      "controls": [
+        "C-DECL",
+        "C-SENS"
+      ],
+      "control_names": [
+        "Operator-declared context fingerprints",
+        "Trusted sensitivity classification, route clearance and durable agent taint"
+      ],
+      "acceptance": "hidden context extraction blocked in declared scenarios",
+      "acceptance_test_id": "AC-LLM-08",
+      "status": "gap_confirmed",
+      "executed_tests": [
+        "test_attack_scenarios.AttackScenarios.test_unlabelled_hidden_context_not_automatically_detected",
+        "test_product_scenarios.LibraryScenarios.test_private_model_output_with_declared_context_denied",
+        "test_product_scenarios.ProductScenarios.test_declared_hidden_context_in_output_withheld",
+        "test_product_scenarios.ProductScenarios.test_paraphrased_declared_context_not_recognized"
+      ],
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_unlabelled_hidden_context_not_automatically_detected",
+          "kind": "known_gap",
+          "outcome": "gap_confirmed",
+          "scope": "undeclared, unlabelled, non-pattern context can be echoed; declare it or label its source"
+        },
+        {
+          "id": "test_product_scenarios.LibraryScenarios.test_private_model_output_with_declared_context_denied",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_product_scenarios.ProductScenarios.test_declared_hidden_context_in_output_withheld",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_product_scenarios.ProductScenarios.test_paraphrased_declared_context_not_recognized",
+          "kind": "known_gap",
+          "outcome": "gap_confirmed",
+          "scope": "declared context matching is lexical; paraphrase is not recognized"
+        }
+      ],
+      "counts": {
+        "prevented_in_scenario": 2,
+        "benign_allowed": 0,
+        "gap_confirmed": 2
+      },
+      "residual_risk": "Declared context is withheld including common obfuscations; paraphrase and undeclared context are missed (confirmed gaps).",
+      "full_category_acceptance": false
+    },
+    {
+      "id": "LLM09:2026",
+      "name": "Vector and Embedding Weaknesses",
+      "owner": "Guard runtime",
+      "controls": [
+        "C-RETR"
+      ],
+      "control_names": [
+        "Per-document retrieval authorization from Guard-owned records"
+      ],
+      "acceptance": "cross-tenant document retrieval denied",
+      "acceptance_test_id": "AC-LLM-09",
+      "status": "gap_confirmed",
+      "executed_tests": [
+        "test_attack_scenarios.AttackScenarios.test_raw_retrieval_connector_does_not_gain_document_acl_automatically",
+        "test_extractive_scenarios.ExtractiveScenarios.test_extract_from_unprovided_source_is_rejected",
+        "test_product_scenarios.ProductScenarios.test_retrieval_ignores_agent_supplied_acl_and_identity",
+        "test_product_scenarios.ProductScenarios.test_supported_retrieval_denies_cross_tenant_and_unauthorized_documents"
+      ],
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_raw_retrieval_connector_does_not_gain_document_acl_automatically",
+          "kind": "known_gap",
+          "outcome": "gap_confirmed",
+          "scope": "generic tool connector used for retrieval; the supported retrieval_local/RetrievalAuthorizer path is tested separately"
+        },
+        {
+          "id": "test_extractive_scenarios.ExtractiveScenarios.test_extract_from_unprovided_source_is_rejected",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "extractive mode refuses citations outside the supplied authorized context"
+        },
+        {
+          "id": "test_product_scenarios.ProductScenarios.test_retrieval_ignores_agent_supplied_acl_and_identity",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_product_scenarios.ProductScenarios.test_supported_retrieval_denies_cross_tenant_and_unauthorized_documents",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        }
+      ],
+      "counts": {
+        "prevented_in_scenario": 3,
+        "benign_allowed": 0,
+        "gap_confirmed": 1
+      },
+      "residual_risk": "The supported retrieval integrations authorize every document from trusted records; generic tool connectors used for retrieval receive no document ACLs (confirmed gap).",
+      "full_category_acceptance": false
+    },
+    {
+      "id": "LLM10:2026",
+      "name": "Improper Output Handling",
+      "owner": "Guard runtime",
+      "controls": [
+        "C-AUTH",
+        "C-EGRESS"
+      ],
+      "control_names": [
+        "Credential digests with tenant-bound route grants",
+        "Network-less Guard with independent allowlisting egress proxy"
+      ],
+      "acceptance": "generated SQL/shell cannot cause unauthorized side effect",
+      "acceptance_test_id": "AC-LLM-10",
+      "status": "scoped_evidence_only",
+      "executed_tests": [
+        "test_attack_scenarios.AttackScenarios.test_model_generated_shell_and_sql_have_no_implicit_executor",
+        "test_product_scenarios.LibraryScenarios.test_guard_egress_to_unlisted_or_metadata_destination_denied"
+      ],
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_model_generated_shell_and_sql_have_no_implicit_executor",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_product_scenarios.LibraryScenarios.test_guard_egress_to_unlisted_or_metadata_destination_denied",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        }
+      ],
+      "counts": {
+        "prevented_in_scenario": 2,
+        "benign_allowed": 0,
+        "gap_confirmed": 0
+      },
+      "residual_risk": "No implicit executor; Guard egress is allowlisted. Sink-specific validation of generated content remains the connector's responsibility.",
+      "full_category_acceptance": false
+    },
+    {
+      "id": "ASI01:2026",
+      "name": "Agent Goal Hijack",
+      "owner": "Guard runtime",
+      "controls": [
+        "C-AUTH",
+        "C-TASK",
+        "C-AI"
+      ],
+      "control_names": [
+        "Credential digests with tenant-bound route grants",
+        "Exact task boundaries",
+        "Configured action-bound AI assessment with deterministic precedence and actor-scoped context (synthetic wiring evidence)"
+      ],
+      "acceptance": "retrieved instructions cannot redefine authorized task",
+      "acceptance_test_id": "AC-ASI-01",
+      "status": "scoped_evidence_only",
+      "executed_tests": [
+        "test_ai_engine_scenarios.AIEngineScenarios.test_ai_allow_cannot_override_separate_hard_deny",
+        "test_ai_engine_scenarios.AIEngineScenarios.test_untrusted_assertions_and_extra_model_fields_cannot_forge_authority",
+        "test_attack_scenarios.AttackScenarios.test_benign_security_discussion_allowed",
+        "test_attack_scenarios.AttackScenarios.test_direct_injection_cannot_grant_tool_authority",
+        "test_attack_scenarios.AttackScenarios.test_indirect_memory_injection_cannot_grant_authority"
+      ],
+      "scenarios": [
+        {
+          "id": "test_ai_engine_scenarios.AIEngineScenarios.test_ai_allow_cannot_override_separate_hard_deny",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "synthetic provider/control wiring, not live model robustness"
+        },
+        {
+          "id": "test_ai_engine_scenarios.AIEngineScenarios.test_untrusted_assertions_and_extra_model_fields_cannot_forge_authority",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "synthetic provider/control wiring, not live model robustness"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_benign_security_discussion_allowed",
+          "kind": "benign",
+          "outcome": "benign_allowed",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_direct_injection_cannot_grant_tool_authority",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_indirect_memory_injection_cannot_grant_authority",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        }
+      ],
+      "counts": {
+        "prevented_in_scenario": 4,
+        "benign_allowed": 1,
+        "gap_confirmed": 0
+      },
+      "residual_risk": "Retrieved or memorized instructions cannot redefine authority; hijack within the permitted task remains possible. AI-engine scenarios use fixed synthetic assessments to validate enforcement wiring; live-model detection accuracy and attack robustness are not established.",
+      "full_category_acceptance": false
+    },
+    {
+      "id": "ASI02:2026",
+      "name": "Tool Misuse",
+      "owner": "Guard runtime",
+      "controls": [
+        "C-AUTH",
+        "C-TASK",
+        "C-APPROVAL",
+        "C-PROVIDER"
+      ],
+      "control_names": [
+        "Credential digests with tenant-bound route grants",
+        "Exact task boundaries",
+        "Exact-action single-use human approvals",
+        "Text-only provider request allowlist (no provider-side URL fetch, hosted tools, storage or media)"
+      ],
+      "acceptance": "allowed tool used against forbidden resource denied",
+      "acceptance_test_id": "AC-ASI-02",
+      "status": "scoped_evidence_only",
+      "executed_tests": [
+        "test_attack_scenarios.AttackScenarios.test_authorized_routine_action_allowed",
+        "test_attack_scenarios.AttackScenarios.test_delegated_privilege_escalation_and_unknown_tool_denied",
+        "test_product_scenarios.LibraryScenarios.test_provider_side_url_fetch_and_hosted_tools_refused_before_dispatch"
+      ],
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_authorized_routine_action_allowed",
+          "kind": "benign",
+          "outcome": "benign_allowed",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_delegated_privilege_escalation_and_unknown_tool_denied",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_product_scenarios.LibraryScenarios.test_provider_side_url_fetch_and_hosted_tools_refused_before_dispatch",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        }
+      ],
+      "counts": {
+        "prevented_in_scenario": 2,
+        "benign_allowed": 1,
+        "gap_confirmed": 0
+      },
+      "residual_risk": "Unknown tools, escalation, out-of-boundary arguments and provider-side tool or fetch fields are denied; per-resource business policy must be configured.",
+      "full_category_acceptance": false
+    },
+    {
+      "id": "ASI03:2026",
+      "name": "Identity and Privilege Abuse",
+      "owner": "Guard runtime",
+      "controls": [
+        "C-AUTH",
+        "C-PEER",
+        "C-REVOKE",
+        "C-RETR",
+        "C-AI"
+      ],
+      "control_names": [
+        "Credential digests with tenant-bound route grants",
+        "Linux SO_PEERCRED peer binding before payload read",
+        "Credential revocation with in-flight cancellation",
+        "Per-document retrieval authorization from Guard-owned records",
+        "Configured action-bound AI assessment with deterministic precedence and actor-scoped context (synthetic wiring evidence)"
+      ],
+      "acceptance": "forged identity and delegated privilege escalation denied",
+      "acceptance_test_id": "AC-ASI-03",
+      "status": "scoped_evidence_only",
+      "executed_tests": [
+        "test_ai_engine_scenarios.AIEngineScenarios.test_replayed_stale_assessment_cannot_authorize_another_operation",
+        "test_ai_engine_scenarios.AIEngineScenarios.test_untrusted_assertions_and_extra_model_fields_cannot_forge_authority",
+        "test_attack_scenarios.AttackScenarios.test_cross_workflow_artifact_and_handoff_denied",
+        "test_attack_scenarios.AttackScenarios.test_delegated_privilege_escalation_and_unknown_tool_denied",
+        "test_attack_scenarios.AttackScenarios.test_stolen_receipt_wrong_identity_and_replay_denied",
+        "test_product_scenarios.LibraryScenarios.test_production_profile_rejects_shared_or_missing_peer_identity",
+        "test_product_scenarios.ProductScenarios.test_revoked_agent_denied_after_reload",
+        "test_product_scenarios.ProductScenarios.test_supported_retrieval_denies_cross_tenant_and_unauthorized_documents"
+      ],
+      "scenarios": [
+        {
+          "id": "test_ai_engine_scenarios.AIEngineScenarios.test_replayed_stale_assessment_cannot_authorize_another_operation",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "synthetic provider/control wiring, not live model robustness"
+        },
+        {
+          "id": "test_ai_engine_scenarios.AIEngineScenarios.test_untrusted_assertions_and_extra_model_fields_cannot_forge_authority",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "synthetic provider/control wiring, not live model robustness"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_cross_workflow_artifact_and_handoff_denied",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_delegated_privilege_escalation_and_unknown_tool_denied",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_stolen_receipt_wrong_identity_and_replay_denied",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_product_scenarios.LibraryScenarios.test_production_profile_rejects_shared_or_missing_peer_identity",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_product_scenarios.ProductScenarios.test_revoked_agent_denied_after_reload",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_product_scenarios.ProductScenarios.test_supported_retrieval_denies_cross_tenant_and_unauthorized_documents",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        }
+      ],
+      "counts": {
+        "prevented_in_scenario": 8,
+        "benign_allowed": 0,
+        "gap_confirmed": 0
+      },
+      "residual_risk": "Forged, stolen-from-another-UID and revoked identities denied (peer binding in container evidence); compromise of the Guard host or bootstrap is out of scope. AI-engine scenarios use fixed synthetic assessments to validate enforcement wiring; live-model detection accuracy and attack robustness are not established.",
+      "full_category_acceptance": false
+    },
+    {
+      "id": "ASI04:2026",
+      "name": "Agentic Supply Chain Vulnerabilities",
+      "owner": "Guard runtime",
+      "controls": [
+        "C-ADMIT"
+      ],
+      "control_names": [
+        "Component hash pin plus declared-capability static check"
+      ],
+      "acceptance": "malicious MCP/skill blocked before use",
+      "acceptance_test_id": "AC-ASI-04",
+      "status": "gap_confirmed",
+      "executed_tests": [
+        "test_attack_scenarios.AttackScenarios.test_component_replacement_during_inspection_denied",
+        "test_attack_scenarios.AttackScenarios.test_correctly_pinned_malicious_tool_is_not_automatically_classified",
+        "test_product_scenarios.LibraryScenarios.test_component_with_undeclared_network_capability_rejected"
+      ],
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_component_replacement_during_inspection_denied",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_correctly_pinned_malicious_tool_is_not_automatically_classified",
+          "kind": "known_gap",
+          "outcome": "gap_confirmed",
+          "scope": "hash pinning plus declared-capability check is not malware classification"
+        },
+        {
+          "id": "test_product_scenarios.LibraryScenarios.test_component_with_undeclared_network_capability_rejected",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        }
+      ],
+      "counts": {
+        "prevented_in_scenario": 2,
+        "benign_allowed": 0,
+        "gap_confirmed": 1
+      },
+      "residual_risk": "As LLM04; MCP/skill package scanning is not provided.",
+      "full_category_acceptance": false
+    },
+    {
+      "id": "ASI05:2026",
+      "name": "Unexpected Code Execution",
+      "owner": "Guard runtime",
+      "controls": [
+        "C-EGRESS"
+      ],
+      "control_names": [
+        "Network-less Guard with independent allowlisting egress proxy"
+      ],
+      "acceptance": "forbidden process/filesystem/network access denied",
+      "acceptance_test_id": "AC-ASI-05",
+      "status": "scoped_evidence_only",
+      "executed_tests": [
+        "test_attack_scenarios.AttackScenarios.test_model_generated_shell_and_sql_have_no_implicit_executor",
+        "test_product_scenarios.LibraryScenarios.test_guard_egress_to_unlisted_or_metadata_destination_denied"
+      ],
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_model_generated_shell_and_sql_have_no_implicit_executor",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_product_scenarios.LibraryScenarios.test_guard_egress_to_unlisted_or_metadata_destination_denied",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        }
+      ],
+      "counts": {
+        "prevented_in_scenario": 2,
+        "benign_allowed": 0,
+        "gap_confirmed": 0
+      },
+      "residual_risk": "No implicit code execution route; container isolation evidence is platform-scoped and kernel escape is not ruled out.",
+      "full_category_acceptance": false
+    },
+    {
+      "id": "ASI06:2026",
+      "name": "Memory and Context Poisoning",
+      "owner": "Guard runtime",
+      "controls": [
+        "C-LABEL",
+        "C-RETR"
+      ],
+      "control_names": [
+        "Workflow-wide sticky labels across artifacts and handoffs",
+        "Per-document retrieval authorization from Guard-owned records"
+      ],
+      "acceptance": "unauthorized write denied and provenance retained",
+      "acceptance_test_id": "AC-ASI-06",
+      "status": "scoped_evidence_only",
+      "executed_tests": [
+        "test_attack_scenarios.AttackScenarios.test_indirect_memory_injection_cannot_grant_authority",
+        "test_product_scenarios.ProductScenarios.test_retrieval_ignores_agent_supplied_acl_and_identity"
+      ],
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_indirect_memory_injection_cannot_grant_authority",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_product_scenarios.ProductScenarios.test_retrieval_ignores_agent_supplied_acl_and_identity",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        }
+      ],
+      "counts": {
+        "prevented_in_scenario": 2,
+        "benign_allowed": 0,
+        "gap_confirmed": 0
+      },
+      "residual_risk": "Memory writes are untrusted and cannot grant authority; retrieval identity is never caller-supplied; semantic poisoning detection is not provided.",
+      "full_category_acceptance": false
+    },
+    {
+      "id": "ASI07:2026",
+      "name": "Insecure Inter-Agent Communication",
+      "owner": "Guard runtime",
+      "controls": [
+        "C-LABEL",
+        "C-SENS",
+        "C-AI"
+      ],
+      "control_names": [
+        "Workflow-wide sticky labels across artifacts and handoffs",
+        "Trusted sensitivity classification, route clearance and durable agent taint",
+        "Configured action-bound AI assessment with deterministic precedence and actor-scoped context (synthetic wiring evidence)"
+      ],
+      "acceptance": "forgery, replay and unauthorized disclosure denied",
+      "acceptance_test_id": "AC-ASI-07",
+      "status": "scoped_evidence_only",
+      "executed_tests": [
+        "test_ai_engine_scenarios.AIEngineScenarios.test_sensitive_values_and_numeric_cards_do_not_reach_fake_provider_request",
+        "test_attack_scenarios.AttackScenarios.test_authorized_interagent_handoff_allowed",
+        "test_attack_scenarios.AttackScenarios.test_cross_agent_summary_does_not_remove_confidential_label",
+        "test_attack_scenarios.AttackScenarios.test_cross_workflow_artifact_and_handoff_denied",
+        "test_attack_scenarios.AttackScenarios.test_handoff_replay_denied",
+        "test_product_scenarios.LibraryScenarios.test_delegated_child_cannot_send_declared_context_externally",
+        "test_product_scenarios.ProductScenarios.test_tainted_agent_summary_to_external_destination_denied",
+        "test_workflow_recovery_scenarios.WorkflowRecoveryScenarios.test_sensitive_handoff_remains_blocked_after_recovery"
+      ],
+      "scenarios": [
+        {
+          "id": "test_ai_engine_scenarios.AIEngineScenarios.test_sensitive_values_and_numeric_cards_do_not_reach_fake_provider_request",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "synthetic provider/control wiring, not live model robustness"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_authorized_interagent_handoff_allowed",
+          "kind": "benign",
+          "outcome": "benign_allowed",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_cross_agent_summary_does_not_remove_confidential_label",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_cross_workflow_artifact_and_handoff_denied",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_handoff_replay_denied",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_product_scenarios.LibraryScenarios.test_delegated_child_cannot_send_declared_context_externally",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_product_scenarios.ProductScenarios.test_tainted_agent_summary_to_external_destination_denied",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_workflow_recovery_scenarios.WorkflowRecoveryScenarios.test_sensitive_handoff_remains_blocked_after_recovery",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        }
+      ],
+      "counts": {
+        "prevented_in_scenario": 7,
+        "benign_allowed": 1,
+        "gap_confirmed": 0
+      },
+      "residual_risk": "In-coordinator handoffs, replay and label propagation tested; network agent-to-agent messaging is unsupported. AI-engine scenarios use fixed synthetic assessments to validate enforcement wiring; live-model detection accuracy and attack robustness are not established.",
+      "full_category_acceptance": false
+    },
+    {
+      "id": "ASI08:2026",
+      "name": "Cascading Failures",
+      "owner": "Guard runtime",
+      "controls": [
+        "C-INSPECT",
+        "C-BUDGET",
+        "C-OUTCOME",
+        "C-AI"
+      ],
+      "control_names": [
+        "Required inspection controls fail closed",
+        "Shared workflow budgets with optional encrypted single-host recovery",
+        "Durable duplicate suppression with time-bound retention",
+        "Configured action-bound AI assessment with deterministic precedence and actor-scoped context (synthetic wiring evidence)"
+      ],
+      "acceptance": "descendant failures cannot exhaust unbounded resources",
+      "acceptance_test_id": "AC-ASI-08",
+      "status": "gap_confirmed",
+      "executed_tests": [
+        "test_ai_engine_scenarios.AIEngineScenarios.test_ai_deny_prevents_target_transport",
+        "test_ai_engine_scenarios.AIEngineScenarios.test_model_or_parse_outage_denies_required_engine",
+        "test_ai_engine_scenarios.AIEngineScenarios.test_valid_low_risk_assessment_permits_unchanged_target_payload",
+        "test_attack_scenarios.AttackScenarios.test_inspection_failure_blocks_without_side_effect_or_sensitive_error",
+        "test_attack_scenarios.AttackScenarios.test_parallel_delegation_cannot_reset_shared_budget",
+        "test_attack_scenarios.AttackScenarios.test_slowloris_can_temporarily_starve_shared_socket_before_read_deadline",
+        "test_product_scenarios.LibraryScenarios.test_saturated_provider_is_refused_before_dispatch_not_unknown",
+        "test_workflow_recovery_scenarios.WorkflowRecoveryScenarios.test_benign_within_budget_work_continues_after_recovery",
+        "test_workflow_recovery_scenarios.WorkflowRecoveryScenarios.test_restart_cannot_reset_depleted_shared_budget"
+      ],
+      "scenarios": [
+        {
+          "id": "test_ai_engine_scenarios.AIEngineScenarios.test_ai_deny_prevents_target_transport",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "synthetic provider/control wiring, not live model robustness"
+        },
+        {
+          "id": "test_ai_engine_scenarios.AIEngineScenarios.test_model_or_parse_outage_denies_required_engine",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "synthetic provider/control wiring, not live model robustness"
+        },
+        {
+          "id": "test_ai_engine_scenarios.AIEngineScenarios.test_valid_low_risk_assessment_permits_unchanged_target_payload",
+          "kind": "benign",
+          "outcome": "benign_allowed",
+          "scope": "synthetic provider/control wiring, not live model robustness"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_inspection_failure_blocks_without_side_effect_or_sensitive_error",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_parallel_delegation_cannot_reset_shared_budget",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_slowloris_can_temporarily_starve_shared_socket_before_read_deadline",
+          "kind": "known_gap",
+          "outcome": "gap_confirmed",
+          "scope": "legacy shared-UID mode only; the production profile requires peer bindings (container evidence)"
+        },
+        {
+          "id": "test_product_scenarios.LibraryScenarios.test_saturated_provider_is_refused_before_dispatch_not_unknown",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_workflow_recovery_scenarios.WorkflowRecoveryScenarios.test_benign_within_budget_work_continues_after_recovery",
+          "kind": "benign",
+          "outcome": "benign_allowed",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_workflow_recovery_scenarios.WorkflowRecoveryScenarios.test_restart_cannot_reset_depleted_shared_budget",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        }
+      ],
+      "counts": {
+        "prevented_in_scenario": 6,
+        "benign_allowed": 2,
+        "gap_confirmed": 1
+      },
+      "residual_risk": "Inspection outages deny before side effects; uncertain outcomes are never replayed; single-host only, no HA. AI-engine scenarios use fixed synthetic assessments to validate enforcement wiring; live-model detection accuracy and attack robustness are not established.",
+      "full_category_acceptance": false
+    },
+    {
+      "id": "ASI09:2026",
+      "name": "Human-Agent Trust Exploitation",
+      "owner": "Guard runtime",
+      "controls": [
+        "C-APPROVAL"
+      ],
+      "control_names": [
+        "Exact-action single-use human approvals"
+      ],
+      "acceptance": "substituted and replayed approval rejected",
+      "acceptance_test_id": "AC-ASI-09",
+      "status": "scoped_evidence_only",
+      "executed_tests": [
+        "test_attack_scenarios.AttackScenarios.test_approval_substitution_replay_and_agent_self_approval_denied",
+        "test_product_scenarios.ProductScenarios.test_service_approval_substitution_and_replay_denied"
+      ],
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_approval_substitution_replay_and_agent_self_approval_denied",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_product_scenarios.ProductScenarios.test_service_approval_substitution_and_replay_denied",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        }
+      ],
+      "counts": {
+        "prevented_in_scenario": 2,
+        "benign_allowed": 0,
+        "gap_confirmed": 0
+      },
+      "residual_risk": "Substituted, replayed, cross-tenant and agent self-approvals rejected; human social-engineering resistance is not established.",
+      "full_category_acceptance": false
+    },
+    {
+      "id": "ASI10:2026",
+      "name": "Rogue Agents",
+      "owner": "Guard runtime",
+      "controls": [
+        "C-REVOKE",
+        "C-LABEL"
+      ],
+      "control_names": [
+        "Credential revocation with in-flight cancellation",
+        "Workflow-wide sticky labels across artifacts and handoffs"
+      ],
+      "acceptance": "independent termination and credential revocation observed",
+      "acceptance_test_id": "AC-ASI-10",
+      "status": "scoped_evidence_only",
+      "executed_tests": [
+        "test_attack_scenarios.AttackScenarios.test_revoked_parent_blocks_descendant_actions",
+        "test_product_scenarios.ProductScenarios.test_revoked_agent_denied_after_reload"
+      ],
+      "scenarios": [
+        {
+          "id": "test_attack_scenarios.AttackScenarios.test_revoked_parent_blocks_descendant_actions",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        },
+        {
+          "id": "test_product_scenarios.ProductScenarios.test_revoked_agent_denied_after_reload",
+          "kind": "attack",
+          "outcome": "prevented_in_scenario",
+          "scope": "local configured application boundary"
+        }
+      ],
+      "counts": {
+        "prevented_in_scenario": 2,
+        "benign_allowed": 0,
+        "gap_confirmed": 0
+      },
+      "residual_risk": "Revocation stops new work and cancels in-flight work; side effects already performed are not rolled back.",
+      "full_category_acceptance": false
+    }
+  ],
+  "mitre_atlas": {
+    "source": "https://atlas.mitre.org/",
+    "status": "selected_scenario_mapping",
+    "content_version": "2026.09",
+    "techniques": [
+      "AML.T0010.005",
+      "AML.T0018",
+      "AML.T0020",
+      "AML.T0025",
+      "AML.T0029",
+      "AML.T0034.002",
+      "AML.T0051",
+      "AML.T0053",
+      "AML.T0055",
+      "AML.T0056",
+      "AML.T0057",
+      "AML.T0071",
+      "AML.T0080",
+      "AML.T0083",
+      "AML.T0086",
+      "AML.T0098",
+      "AML.T0101"
+    ],
+    "component_mapping": "atlas-evidence.json",
+    "note": "Selected techniques with executed scenarios/component tests. Full technique validation is not claimed."
+  },
+  "evidence": {
+    "report": "verification/0.5.0rc3.dev12/attack-scenarios.json",
+    "scenario_outcomes_sha256": "08b0834d3c88b8f66b89711fc5a9aebc124c14b4a8ec800d950e90a737158836",
+    "scenario_count": 56,
+    "counts": {
+      "prevented_in_scenario": 42,
+      "benign_allowed": 7,
+      "gap_confirmed": 7,
+      "failed": 0,
+      "error": 0,
+      "gap_probe_changed_requires_review": 0,
+      "skipped": 0
+    },
+    "gate": "blocked_known_gaps",
+    "note": "Scenario execution does not establish full category protection. Expected failures are confirmed gaps."
+  },
+  "statement": "Control-to-scenario mapping for the 0.5.0rc2 CLI product. A mapping records which implemented control a scenario exercises and its executed outcome. No category or technique is declared fully accepted."
+}

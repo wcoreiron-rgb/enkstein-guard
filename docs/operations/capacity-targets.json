@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "defined_at": "2026-10-28T00:03:00Z",
+  "defined_before_measurement": true,
+  "scope": "Single Guard host, v1 CLI product. Targets are acceptance requirements, not observed results.",
+  "reference_environment": {
+    "os": "Linux",
+    "architecture": "aarch64",
+    "vcpu": 4,
+    "memory_mib": 4096,
+    "storage": "local disk",
+    "configuration": "audit ledger, outcome ledger with time-bound request IDs, sensitivity control, local_prompt control, synthetic fixture connector"
+  },
+  "targets": [
+    {"id": "T-01", "name": "sustained_throughput", "offered_rps": 25, "min_duration_seconds": 300,
+     "p50_ms_max": 50, "p95_ms_max": 150, "p99_ms_max": 300, "unexpected_error_rate_max": 0.0},
+    {"id": "T-02", "name": "burst_concurrency", "concurrent_clients": 32, "duration_seconds": 60,
+     "allowed_non_ok_statuses": ["busy"], "service_crashes_max": 0},
+    {"id": "T-03", "name": "populated_vault", "live_entries_min": 8000, "tenants": 4,
+     "tokenizing_request_p95_ms_max": 250, "cross_tenant_restorations_max": 0},
+    {"id": "T-04", "name": "audit_ledger", "active_events": 100000, "append_p95_ms_max": 25,
+     "full_verify_seconds_max": 60, "archive_seconds_max": 120},
+    {"id": "T-05", "name": "outcome_ledger", "records": 9000, "capacity": 10000,
+     "begin_finish_p95_ms_max": 25, "archived_ids_accepted_max": 0},
+    {"id": "T-06", "name": "startup_with_populated_state", "ready_seconds_max": 30},
+    {"id": "T-07", "name": "memory", "guard_rss_mib_max": 256},
+    {"id": "T-08", "name": "exhaustion_recovery", "recovery_seconds_max": 5, "process_crashes_max": 0},
+    {"id": "T-09", "name": "slow_dependencies", "control_timeout_slack_ms_max": 100,
+     "transport_timeout_slack_ms_max": 500}
+  ],
+  "not_covered": [
+    "Multi-hour or multi-day soak",
+    "Multi-UID peer-bound fairness under load (container acceptance only)",
+    "Live provider latency",
+    "Hosts other than the reference environment"
+  ]
+}

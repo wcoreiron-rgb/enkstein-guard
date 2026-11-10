@@ -1,0 +1,25 @@
+{
+  "schema_version": 2,
+  "profile": "development",
+  "paths": {
+    "state_directory": "/var/lib/enkstein-guard/state",
+    "key_directory": "/var/lib/enkstein-guard/keys",
+    "socket": "/var/lib/enkstein-guard/run/guard.sock",
+    "admin_socket": "/var/lib/enkstein-guard/admin/admin.sock",
+    "archive_directory": "/var/lib/enkstein-guard/archive"
+  },
+  "tenants": [{"id": "demo"}],
+  "connectors": [{"name": "tickets", "type": "fixture", "behavior": "echo"}],
+  "routes": [
+    {"name": "ticket.comment", "tenant": "demo", "operation": "ticket.update", "resource": "ticket",
+     "destination": "ticket-service", "connector": "tickets", "clearance": "confidential", "produces": "internal",
+     "task_boundaries": [{"principal": "demo-bot", "workflow": "inc-42", "fields": [
+       {"path": ["ticket"], "kind": "str", "choices": ["INC-42"]},
+       {"path": ["comment"], "kind": "str", "max_length": 2000}]}]},
+    {"name": "ticket.close", "tenant": "demo", "operation": "ticket.close", "resource": "ticket",
+     "destination": "ticket-service", "connector": "tickets", "clearance": "confidential", "approval": "required"}
+  ],
+  "agents": [{"id": "demo-agent", "tenant": "demo", "principal": "demo-bot", "task": "inc-42",
+              "clearance": "confidential", "routes": ["ticket.comment", "ticket.close"]}],
+  "approvers": [{"id": "demo-lead", "tenants": ["demo"]}]
+}

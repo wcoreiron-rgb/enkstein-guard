@@ -1,0 +1,51 @@
+{
+  "schema_version": 2,
+  "profile": "production-linux-peer-bound",
+  "deployment": {"guard_uid": 10001},
+  "paths": {
+    "state_directory": "/state",
+    "key_directory": "/state-keys",
+    "socket": "/run/guard/guard.sock",
+    "admin_socket": "/run/guard-admin/admin.sock",
+    "archive_directory": "/archive"
+  },
+  "service": {"socket_group": 10001, "max_connections": 32, "per_peer_connections": 4, "max_requests_per_second": 20},
+  "outcomes": {"capacity": 300000, "max_request_age_seconds": 3600},
+  "retention": {"outcome_archive_age_seconds": 7200, "outcome_archive_interval_seconds": 600},
+  "tenants": [{"id": "support"}],
+  "backend_inventory": {
+    "schema_version": 1,
+    "backends": [
+      {"backend_id": "example-ai", "account_id": "support-prod", "data_domain": "example-ai-support-prod",
+       "tenants": ["support"], "hosts": ["https://ai.example.com"]}
+    ]
+  },
+  "connectors": [
+    {"name": "hatz", "type": "chat_completions", "endpoint": "https://ai.example.com/v1/chat/completions",
+     "model": "example-model", "credential": "hatz-key", "authentication": "x-api-key",
+     "data_domain": "example-ai-support-prod"},
+    {"name": "kb", "type": "retrieval_local", "collection": "kb"}
+  ],
+  "routes": [
+    {"name": "model.chat", "tenant": "support", "operation": "model.call", "connector": "hatz",
+     "clearance": "internal", "produces": "internal", "privacy": "tokenize", "grounding": {"citations": "optional"}},
+    {"name": "kb.search", "tenant": "support", "operation": "retrieve", "connector": "kb", "clearance": "confidential"}
+  ],
+  "agents": [
+    {"id": "support-agent", "tenant": "support", "principal": "support-bot", "uid": 11001,
+     "clearance": "confidential", "groups": ["support"], "routes": ["model.chat", "kb.search"]}
+  ],
+  "approvers": [{"id": "support-lead", "tenants": ["support"]}],
+  "sensitivity": {
+    "field_rules": [{"path": ["customer", "ssn"], "level": "restricted"}],
+    "declared_context": [{"name": "system-prompt", "level": "confidential", "file": "/bootstrap/declared/system-prompt.txt"}],
+    "unlabelled_heuristics": "monitor"
+  },
+  "egress": {
+    "mode": "proxy",
+    "socket": "/run/guard-egress/egress.sock",
+    "client_uids": [10001],
+    "socket_group": 10003,
+    "allow": [{"host": "ai.example.com", "port": 443}]
+  }
+}

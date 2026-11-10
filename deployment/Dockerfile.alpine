@@ -1,0 +1,28 @@
+FROM python:3.12-alpine@sha256:1b668429b3511ab407d8e00648891631b0b1a4d7e15e3ca70f38ab5b91ad4ab4
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    ENKSTEIN_POLICY_PACK=/nonexistent/guard-container
+WORKDIR /opt/guard
+
+ARG GUARD_WHEEL=dist/deployment/enkstein_guard-0.5.0rc2-py3-none-any.whl
+COPY ${GUARD_WHEEL} /tmp/wheels/
+COPY dist/vendor-linux-musl-arm64/ /tmp/wheels/
+
+RUN set -eu; \
+    apk add --no-cache zlib=1.4-r0 musl=1.2.6-r3 musl-utils=1.2.6-r3; \
+    python -m pip install --no-cache-dir --no-index --require-hashes \
+        --find-links /tmp/wheels -r /tmp/wheels/requirements.txt; \
+    python -m pip uninstall -y pip; \
+    rm -rf /tmp/wheels /root/.cache /usr/local/lib/python3.12/ensurepip; \
+    addgroup -S -g 10001 guard; \
+    adduser -S -D -H -u 10001 -G guard guard; \
+    ! command -v pip; \
+    ! command -v cc; \
+    ! command -v gcc; \
+    ! command -v clang; \
+    ! python -c 'import ensurepip'; \
+    ! python -c 'import pip'
+
+USER 10001:10001
+ENTRYPOINT ["enkstein-guard-host"]

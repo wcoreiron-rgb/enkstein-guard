@@ -1,0 +1,7 @@
+# Optional verified SDK environment: Python 3.11. NeMo 0.24.1 excludes Python 3.14.
+# No engine is enabled until explicitly configured in a PrivateAI instance.
+nemoguardrails==0.24.1
+cisco-aidefense-sdk==2.2.0
+# Public agent-control-plane 1.2.0 lacks freeze(). This pinned official revision
+# supplies the frozen policy engine used by the adapter. No umbrella-package claim.
+agent-governance-toolkit-control-plane @ https://github.com/microsoft/agent-governance-toolkit/archive/86db4607dcb67e5dbe48b885bc535f77be5e244d.tar.gz#sha256=d188680c60a6d6be25799fa8b0236e869c45c0a978650b9aabba254bd646492c&subdirectory=agent-governance-python/agent-os/modules/control-plane

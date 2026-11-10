@@ -1,0 +1,145 @@
+name: Source bootstrap checks (not release acceptance)
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  ENKSTEIN_POLICY_PACK: /nonexistent/guard-source-ci
+  PYTHONPATH: ${{ github.workspace }}/src
+  PIP_DISABLE_PIP_VERSION_CHECK: '1'
+  HF_HUB_OFFLINE: '1'
+  LANGSMITH_TRACING: 'false'
+  LANGCHAIN_TRACING_V2: 'false'
+
+jobs:
+  core:
+    name: Source core / ${{ matrix.os }} / Python ${{ matrix.python }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            python: '3.12'
+          - os: macos-15
+            python: '3.14'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out source without persisting credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Prepare source bootstrap dependencies
+        run: |
+          mkdir -p verification/ci
+          python -m pip install --only-binary=:all: --no-deps \
+            cryptography==50.0.2 cffi==2.1.1 pycparser==3.11 \
+            2>&1 | tee verification/ci/dependency-install.log
+          python -m pip check 2>&1 | tee verification/ci/pip-check.log
+          python -m pip freeze --all > verification/ci/dependencies.txt
+          python --version > verification/ci/python.txt
+      - name: Compile source before subprocess CLI checks
+        run: python -m compileall -q src/enkstein_guard 2>&1 | tee verification/ci/compile.log
+      - name: Run source core tests and record skips
+        run: |
+          python -W error::ResourceWarning tools/verify_scenarios.py \
+            --suite tests --report source-bootstrap-core \
+            --output verification/ci/core.json \
+            2>&1 | tee verification/ci/core.log
+      - name: Summarize source results and limitations
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          path = Path("verification/ci/core.json")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+              summary.write("## Source bootstrap only\n\n")
+              summary.write("These checks import `src` through explicit `PYTHONPATH`; they do not validate an installed wheel or release image.\n\n")
+              if path.exists():
+                  report = json.loads(path.read_text())
+                  summary.write(report["counts"]["summary"] + "\n\n")
+                  for name, reason in report.get("skipped_tests", {}).items():
+                      summary.write(f"- Skipped: `{name}` — {reason}\n")
+              else:
+                  summary.write("No complete core report was produced. Inspect the failed step and logs.\n")
+              summary.write("\nSkips are missing evidence, never passes. No privileged runner configuration, optional SDK acceptance, container, load, endurance, or production acceptance is performed.\n")
+          PY
+      - name: Retain source evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: source-core-${{ matrix.os }}-python-${{ matrix.python }}
+          path: verification/ci/
+          if-no-files-found: warn
+          retention-days: 14
+
+  attack-gap-gate:
+    name: Attack scenarios / known gaps block acceptance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source without persisting credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Prepare source bootstrap dependencies
+        run: |
+          mkdir -p verification/ci
+          python -m pip install --only-binary=:all: --no-deps \
+            cryptography==50.0.2 cffi==2.1.1 pycparser==3.11 \
+            2>&1 | tee verification/ci/dependency-install.log
+          python -m pip check 2>&1 | tee verification/ci/pip-check.log
+          python -m pip freeze --all > verification/ci/dependencies.txt
+          python --version > verification/ci/python.txt
+      - name: Run attack scenarios (exit 2 retains the known-gap failure)
+        # Do not add continue-on-error or turn exit 2 into success. The dev12
+        # baseline has seven confirmed gaps; this job intentionally stays red.
+        run: |
+          python tools/verify_attack_scenarios.py \
+            --output verification/ci/attack-scenarios.json \
+            2>&1 | tee verification/ci/attack-scenarios.log
+      - name: Explain attack gate outcome
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          path = Path("verification/ci/attack-scenarios.json")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+              summary.write("## Scoped attack gate\n\n")
+              if path.exists():
+                  report = json.loads(path.read_text())
+                  summary.write(f"Gate: `{report['gate']}`\n\n")
+                  summary.write("```json\n" + json.dumps(report["counts"], indent=2) + "\n```\n\n")
+              else:
+                  summary.write("No complete attack report was produced. Inspect the failed step and logs.\n\n")
+              summary.write("Exit 2 means confirmed gaps remain and intentionally fails this job. Exit 1 means unexpected failure, error, skip, or changed gap probe. Exit 0 only means these scoped probes passed; it is not full product, framework, or production acceptance.\n")
+          PY
+      - name: Retain attack evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: source-attack-scenarios-linux-python-3.12
+          path: verification/ci/
+          if-no-files-found: warn
+          retention-days: 14

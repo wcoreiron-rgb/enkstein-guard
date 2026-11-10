@@ -1,0 +1,4 @@
+# Characterization-only counters upstream. It never stores request bodies.
+services:
+  upstream:
+    entrypoint: [python, /acceptance/ai_security_characterization_upstream.py]

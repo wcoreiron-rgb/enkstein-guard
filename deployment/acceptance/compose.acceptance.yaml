@@ -1,0 +1,31 @@
+# Acceptance-only overlay: a synthetic TLS upstream reachable solely from the
+# egress network. Never use in a real deployment.
+services:
+  upstream:
+    image: ${GUARD_IMAGE:-enkstein-guard:local}
+    user: "10009:10009"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    sysctls:
+      net.ipv4.ip_unprivileged_port_start: "0"
+    entrypoint: [python, /acceptance/upstream.py]
+    environment:
+      UPSTREAM_MODE: ${UPSTREAM_MODE:-capture}
+    networks:
+      egress:
+        aliases: [upstream.acceptance.test]
+    volumes:
+      - ${GUARD_ACCEPTANCE_DIR:?acceptance directory}:/acceptance:ro
+      - ${GUARD_UPSTREAM_DIR:?upstream certificate directory}:/upstream:ro
+      - upstream-capture:/capture
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=8m"]
+  capture-init:
+    image: ${GUARD_IMAGE:-enkstein-guard:local}
+    user: "0:0"
+    network_mode: none
+    entrypoint: [python, -c, "import os; os.chown('/capture', 10009, 10009); os.chmod('/capture', 0o700)"]
+    volumes:
+      - upstream-capture:/capture
+volumes:
+  upstream-capture:

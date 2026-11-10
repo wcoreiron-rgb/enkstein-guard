@@ -1,0 +1,115 @@
+{
+  "schema": "enkstein-guard.capacity-targets/v1",
+  "name": "production-linux-peer-bound capacity and concurrency acceptance",
+  "defined_at": "2026-10-28T18:05:00Z",
+  "defined_before_measurement": true,
+  "revised_at": "2026-10-28T20:43:00Z",
+  "revision_note": "Stricter only, after an AI-assisted review of the harness and before the final run: every phase now fails unless every launched agent exits 0 and reports a summary (rate-driven agents with at least 95 % of their offered requests), and P-04 makes some requests slow at the upstream so that executed requests are in flight at the kill, and requires that every lost response is resubmitted and that at least one resubmission concerns a request Guard had admitted. No threshold was relaxed.",
+  "reference_host": "one Linux ARM64 Docker host, 4 vCPU, 6 GiB, Guard limited to 1 CPU and 512 MiB by compose.production.yaml",
+  "deployment": "deployment/compose.production.yaml + acceptance overlay: network-less Guard (UID 10001), egress proxy (UID 10002), synthetic TLS upstream reachable only from the egress network, network-less agent containers with separate UIDs and credentials",
+  "configuration": {
+    "agents": 4,
+    "tenants": 2,
+    "max_requests_per_second": 40,
+    "per_peer_connections": 4,
+    "outcome_capacity": 200000,
+    "outcome_archive_age_seconds": 3600,
+    "outcome_archive_interval_seconds": 300,
+    "request_mix": "per agent by weight: 5 tokenized chat, 2 tokenized chat with a sensitive value, 1 untokenized chat, 2 retrieval"
+  },
+  "targets": [
+    {
+      "id": "P-01",
+      "name": "sustained mixed load through the egress proxy",
+      "load": {
+        "agents": 4,
+        "requests_per_second_per_agent": 5,
+        "duration_seconds": 600
+      },
+      "requirements": {
+        "non_ok_statuses_max": 0,
+        "p50_ms_max": 100,
+        "p95_ms_max": 300,
+        "p99_ms_max": 750,
+        "guard_rss_mib_max": 256,
+        "egress_rss_mib_max": 96,
+        "guard_fds_max": 256,
+        "upstream_duplicate_markers_max": 0,
+        "dedup_probe_status": "completed_no_replay"
+      }
+    },
+    {
+      "id": "P-02",
+      "name": "saturation: closed-loop clients at the per-peer connection limit",
+      "load": {
+        "agents": 4,
+        "concurrency_per_agent": 4,
+        "duration_seconds": 120
+      },
+      "requirements": {
+        "allowed_statuses": [
+          "ok",
+          "busy:rate_limited"
+        ],
+        "ok_fraction_of_configured_rate_min": 0.9,
+        "admitted_per_agent_rate_max_factor": 1.1,
+        "ok_p95_ms_max": 1000,
+        "tracked_equals_executed": true
+      }
+    },
+    {
+      "id": "P-03",
+      "name": "fairness: one agent floods beyond its connection limit while another works",
+      "load": {
+        "flooder": "a1",
+        "flooder_concurrency": 8,
+        "light": "b1",
+        "light_requests_per_second": 2,
+        "duration_seconds": 120
+      },
+      "requirements": {
+        "light_ok_fraction_min": 0.99,
+        "light_p95_ms_max": 500,
+        "flooder_allowed_statuses": [
+          "ok",
+          "busy",
+          "busy:rate_limited"
+        ]
+      }
+    },
+    {
+      "id": "P-04",
+      "name": "forced Guard restart under load: no request executes twice",
+      "load": {
+        "agents": 4,
+        "requests_per_second_per_agent": 5,
+        "duration_seconds": 120,
+        "kill_guard_after_seconds": 40,
+        "slow_request_every": 10,
+        "slow_request_ms": 2000
+      },
+      "requirements": {
+        "upstream_duplicate_markers_max": 0,
+        "lost_resubmission_statuses": [
+          "ok",
+          "completed_no_replay",
+          "outcome_unknown_no_replay"
+        ],
+        "ready_after_restart_seconds_max": 60,
+        "all_lost_resubmitted": true,
+        "lost_after_admission_resubmissions_min": 1
+      }
+    },
+    {
+      "id": "P-05",
+      "name": "provider-side fetch and tool fields refused before dispatch",
+      "requirements": {
+        "refused_statuses": [
+          "denied"
+        ],
+        "upstream_requests_added_max": 0
+      }
+    }
+  ],
+  "measurement_rules": "Latency is client-observed per request inside the agent containers. A status other than the listed ones is a failure. Targets are acceptance requirements for this single-host profile, not service-level agreements; the synthetic upstream answers immediately, so provider latency is excluded. Every launched agent must exit 0 and report its summary; a rate-driven agent must issue at least 95 % of its offered requests. A phase with a failed or missing agent fails."
+}
